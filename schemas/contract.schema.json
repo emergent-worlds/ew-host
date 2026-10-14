@@ -1,0 +1,90 @@
+{
+  "$ref": "#/definitions/contract",
+  "definitions": {
+    "contract": {
+      "type": "object",
+      "properties": {
+        "needs": {
+          "type": "object",
+          "properties": {
+            "calls": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "load",
+                  "save",
+                  "advance",
+                  "input",
+                  "read",
+                  "query",
+                  "explain",
+                  "forecast",
+                  "change"
+                ]
+              },
+              "default": []
+            },
+            "state": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "adds": {
+          "type": "object",
+          "properties": {
+            "slots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "dashboard-line",
+                  "variable-course",
+                  "portrait",
+                  "icon",
+                  "map-view",
+                  "graph-view",
+                  "settings-section"
+                ]
+              },
+              "default": []
+            },
+            "gives": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "dashboard-line",
+                  "variable-course",
+                  "portrait",
+                  "icon",
+                  "map-view",
+                  "graph-view",
+                  "settings-section"
+                ]
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "fits": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {}
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

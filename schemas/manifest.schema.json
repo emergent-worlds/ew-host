@@ -1,0 +1,261 @@
+{
+  "$ref": "#/definitions/manifest",
+  "definitions": {
+    "manifest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "kind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,39}$"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000,
+          "default": ""
+        },
+        "version": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string",
+          "pattern": "^@[a-z0-9][a-z0-9_-]{0,38}$"
+        },
+        "uses": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "pattern": "^@[a-z0-9][a-z0-9_-]{0,38}\\/[a-z0-9][a-z0-9._-]{0,99}$"
+          },
+          "default": {}
+        },
+        "derived_from": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^@[a-z0-9][a-z0-9_-]{0,38}\\/[a-z0-9][a-z0-9._-]{0,99}@[^@\\s]+$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^property:[A-Za-z0-9_-]{1,64}$"
+                  }
+                ]
+              },
+              "part": {
+                "type": "string",
+                "minLength": 1,
+                "default": "*"
+              },
+              "how": {
+                "type": "string",
+                "enum": [
+                  "fork",
+                  "copy",
+                  "apply"
+                ]
+              }
+            },
+            "required": [
+              "source",
+              "how"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
+        },
+        "terms": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "block",
+                "track",
+                "monetize"
+              ],
+              "default": "track"
+            },
+            "share": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "credit": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "forks": {
+              "type": "boolean",
+              "default": true
+            },
+            "licensees": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^@[a-z0-9][a-z0-9_-]{0,38}$"
+              },
+              "default": []
+            },
+            "price": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "maturity_ceiling": {
+              "type": "string",
+              "enum": [
+                "general",
+                "mild",
+                "moderate",
+                "restricted"
+              ]
+            },
+            "themes_not_allowed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            }
+          },
+          "additionalProperties": false,
+          "default": {}
+        },
+        "entry": {
+          "type": "object",
+          "properties": {
+            "web": {
+              "type": "string",
+              "minLength": 1
+            },
+            "headless": {
+              "type": "string",
+              "minLength": 1
+            },
+            "installs": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              },
+              "propertyNames": {
+                "enum": [
+                  "windows-x64",
+                  "macos-arm64",
+                  "macos-x64",
+                  "linux-x64",
+                  "server"
+                ]
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "asks": {
+          "type": "object",
+          "properties": {
+            "surface": {
+              "type": "string",
+              "enum": [
+                "none",
+                "full",
+                "panel",
+                "window"
+              ],
+              "default": "none"
+            },
+            "input": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "pointer",
+                  "keys",
+                  "touch"
+                ]
+              },
+              "default": []
+            },
+            "saves": {
+              "type": "boolean",
+              "default": false
+            },
+            "models": {
+              "type": "object",
+              "properties": {
+                "jobs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "jobs"
+              ],
+              "additionalProperties": false
+            },
+            "agent": {
+              "type": "string",
+              "enum": [
+                "none",
+                "read",
+                "change"
+              ],
+              "default": "none"
+            },
+            "network": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9.-]+(:\\d{1,5})?$"
+              },
+              "default": []
+            },
+            "while_away": {
+              "type": "boolean",
+              "default": false
+            },
+            "players": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10,
+              "default": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9 -]{0,39}$"
+          },
+          "maxItems": 20,
+          "default": []
+        }
+      },
+      "required": [
+        "name",
+        "kind",
+        "version",
+        "owner"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

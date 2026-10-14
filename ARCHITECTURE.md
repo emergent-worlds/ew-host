@@ -26,4 +26,4 @@ TypeScript, Zod, JSON Schema. The reasons are in [`docs/decisions.md`](./docs/de
 
 ## Status
 
-Created on 2026-10-14 in wave 0 of build V2; nothing is built yet.
+Wave 0, 2026-10-14: the manifest, interface, and contract schemas (`src/manifest.ts`, `src/interface.ts`, emitted as JSON Schema in `schemas/`), the works / may work / won't work marks (`src/marks.ts`), the version 1 message vocabulary with what each ask permits (`src/protocol.ts`), the host's bridge (`src/bridge.ts`), and the folder's loader (`src/loader.ts`), with tests. Still to come, in the waves that use them: the folder client that checks out and saves against the platform's folder store, the WebSocket and loopback transports, and the journeys hooks in the loader.

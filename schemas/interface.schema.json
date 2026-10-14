@@ -1,0 +1,55 @@
+{
+  "$ref": "#/definitions/interface",
+  "definitions": {
+    "interface": {
+      "type": "object",
+      "properties": {
+        "calls": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "load",
+              "save",
+              "advance",
+              "input",
+              "read",
+              "query",
+              "explain",
+              "forecast",
+              "change"
+            ]
+          },
+          "minItems": 1
+        },
+        "takes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "saves",
+              "while_away",
+              "players",
+              "agent.change",
+              "models"
+            ]
+          },
+          "default": []
+        },
+        "opens": {
+          "type": "string",
+          "default": "*"
+        },
+        "forecasts": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "calls"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}
