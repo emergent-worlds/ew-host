@@ -77,7 +77,14 @@ export const FolderContract = z.object({
   fits: z.record(z.string(), z.string()).default({}),
   /** The ES module other folders import: a pack's core and page, a module's slot fillers (D4, D6). */
   module: ModulePath.optional(),
-  /** The model a pack recommends for each job it names, by catalogue id, which the App shows as the Reality's recommendation (S3 3.2b). */
+  /**
+   * The model a pack recommends for each job it names, which the App shows as the
+   * Reality's recommendation (S3 3.2b). The recommendation is a catalogue id. The
+   * platform follows a retired model to the model it was retired to, and reports at
+   * import an id no catalogue row serves. It is the third step of the person's
+   * model for a job: the person's choice for this Reality, their general choice,
+   * this recommendation, the catalogue's default.
+   */
   recommends: z.record(JobName, z.string().min(1)).default({}),
   /**
    * The files this folder keeps in a Reality's folder, by path prefix, in a form
