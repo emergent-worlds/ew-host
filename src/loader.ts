@@ -34,12 +34,26 @@ export interface Host {
   /** A file the person picks; resolves with `{ name, mime, data }`, rejects when they cancel. */
   pick(accept: string[]): Promise<{ name: string; mime: string; data: string }>;
   exportFile(name: string, mime: string, data: string): Promise<unknown>;
+  /** Asks the App to open one of its own surfaces over the frame (no reply). */
+  open(what: 'saves' | 'copy' | 'rate' | 'start-from', detail?: string): void;
   /** The person's preferences for this folder, kept per account. */
   prefs(prefs: unknown): Promise<unknown>;
   error(message: string): void;
 }
 
 const isHandoff = (data: unknown): data is { ewHost: 1 } => (data as { ewHost?: unknown })?.ewHost === PROTOCOL_VERSION;
+
+/**
+ * Starts a folder's core as a module worker from a page in the App's frame. A sandboxed page has an
+ * opaque origin and cannot start a worker from its own URL, so the worker is a `blob:` bootstrap
+ * that imports the core by its absolute URL (the frame's policy allows `blob:` workers; the App's
+ * request 4, 2026-10-15). Pass the core's URL, absolute or relative to the page.
+ */
+export function startCore(url: string): Worker {
+  const absolute = new URL(url, location.href).href;
+  const bootstrap = URL.createObjectURL(new Blob([`import ${JSON.stringify(absolute)};`], { type: 'text/javascript' }));
+  return new Worker(bootstrap, { type: 'module' });
+}
 
 /** Waits for the App to hand this frame its port (a window message whose `ewHost` is 1, from the parent only). */
 export function framePort(timeoutMs = 10_000): Promise<MessagePort> {
@@ -163,6 +177,7 @@ export function connect(transport: Transport, timeoutMs = 10_000): Promise<Host>
       read: async (path) => (await request({ type: 'file.read', path }).reply as { data: string }).data,
       pick: (accept) => request({ type: 'file.pick', accept }).reply as Promise<{ name: string; mime: string; data: string }>,
       exportFile: (name, mime, data) => request({ type: 'file.export', name, mime, data }).reply,
+      open: (what, detail) => send({ type: 'app.open', what, ...(detail === undefined ? {} : { detail }) }),
       prefs: (prefs) => request({ type: 'prefs.set', prefs }).reply,
       error: (message) => send({ type: 'error', message }),
     };

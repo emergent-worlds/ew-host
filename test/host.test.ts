@@ -124,6 +124,11 @@ describe('the marks', () => {
   };
   const reality = Manifest.parse({ ...saltHarbor, uses: { '@emergentworlds/narrative-protagonist': '^1', '@emergentworlds/emergence-engine': '^1' } });
 
+  it('reaches the engine through the pack, as a Reality names only its pack (0.3.0)', () => {
+    const viaPack = Manifest.parse({ ...saltHarbor, uses: { '@emergentworlds/narrative-protagonist': '^1' } });
+    expect(markFolder(viaPack, catalog, 'computer', '@emergentworlds/emergence-engine').mark).toBe('works');
+  });
+
   it('works when everything resolves and the engine takes every ask', () => {
     expect(markFolder(reality, catalog, 'computer', '@emergentworlds/emergence-engine').mark).toBe('works');
     // Pictures (the operator, 2026-10-15): optional unless the manifest needs them.

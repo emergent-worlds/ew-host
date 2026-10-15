@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Marks read uses transitively; the journeys drive a Reality's page through hooks of its own
+
+**Decision.** (1) `resolveUses` follows each used folder's own uses, so a Reality that names its pack reaches the engine and the pack's contract is checked against it. (2) A page starts its core with `startCore(url)`, a `blob:` bootstrap that imports the core by its absolute URL, since a sandboxed page cannot start a worker from its own URL. (3) `HostBridge` passes `app.open` to `HostHandlers.appOpen`, and a folder's `Host.open` sends it. (4) A progress of 1, or the first status line, tells the host the folder has opened. (5) `installJourneysHooks()` answers find, click, type, wait, read, and screen on the page's own elements, with the App seam's selector, only for the parent window and only once the App's handoff of the port says `journeys: true`; errors never repeat a typed value.
+
+**Alternatives.** (1) The host flattening uses itself. (5) The journeys hooks over the host contract, which ends in the core's worker and has no page.
+
+**Rationale.** The App team's requests 1 and 4 to 7 of 2026-10-15, found running Salt Harbor in the App.
+
 ## 2026-10-15: The host keeps the files it writes into a running folder
 
 **Decision.** A save's listing is the folder core's complete tree, so a file absent from it is deleted. Files the host writes into a folder whose core is running (the agent's files and their provenance) are merged by the host into the version it makes from the core's next save; a core's listing never deletes them.

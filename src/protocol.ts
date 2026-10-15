@@ -236,7 +236,10 @@ export type HostMessageIn = z.input<typeof HostMessage>;
 
 export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('ready'), protocol: z.literal(PROTOCOL_VERSION) }),
-  /** How far along opening is, for the opening board (S3 3.3f); optional. */
+  /**
+   * How far along opening is, for the opening board (S3 3.3f); optional. A progress of 1, or the
+   * folder's first status line, tells the host the folder has opened (the App's request 7).
+   */
   z.object({ ...base, type: z.literal('progress'), fraction: z.number().min(0).max(1), text: z.string().max(140).optional() }),
   /** The one line the home shows for this Reality (MR3.1). */
   z.object({ ...base, type: z.literal('status'), line: z.string().max(140) }),

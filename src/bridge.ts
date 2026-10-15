@@ -52,6 +52,8 @@ export interface HostHandlers {
   filePick?(accept: string[]): Promise<unknown>;
   fileExport?(m: FolderOf<'file.export'>): Promise<unknown>;
   prefsSet?(prefs: unknown): Promise<unknown>;
+  /** The folder asks the App to open one of its own surfaces over the frame (no reply). */
+  appOpen?(what: FolderOf<'app.open'>['what'], detail?: string): void;
   error?(message: string): void;
   /** A message refused or malformed; the bridge has already answered the folder. */
   refused?(reason: string, raw: unknown): void;
@@ -167,6 +169,8 @@ export class HostBridge {
         return this.handlers.ready?.();
       case 'progress':
         return this.handlers.progress?.(m.fraction, m.text);
+      case 'app.open':
+        return this.handlers.appOpen?.(m.what, m.detail);
       case 'status':
         return this.handlers.status?.(m.line);
       case 'save': {

@@ -61,19 +61,24 @@ export function askParts(m: Manifest): AskPart[] {
 
 /** Resolves each folder a manifest uses to the best version in its range, or the latest when none fits. */
 export function resolveUses(m: Manifest, catalog: Catalog): { resolved: Map<string, string>; outside?: string; missing?: string } {
+  // Transitive: a Reality uses its pack, which uses the engine, so the engine's interface and the
+  // pack's contract are reached through the pack (the App's request 1, 2026-10-15). The first range
+  // that names a folder decides its version.
   const resolved = new Map<string, string>();
   let outside: string | undefined;
-  for (const [ref, range] of Object.entries(m.uses)) {
+  const queue: [string, string][] = Object.entries(m.uses);
+  while (queue.length) {
+    const [ref, range] = queue.shift()!;
+    if (resolved.has(ref)) continue;
     const versions = catalog.versions(ref);
     if (versions.length === 0) return { resolved, missing: ref };
-    const best = semver.maxSatisfying(versions, range);
-    if (best) {
-      resolved.set(ref, best);
-    } else {
-      const latest = semver.rsort([...versions])[0]!;
-      resolved.set(ref, latest);
-      outside ??= `${ref} ${latest} is outside the range ${range} it names`;
+    let best = semver.maxSatisfying(versions, range);
+    if (!best) {
+      best = semver.rsort([...versions])[0]!;
+      outside ??= `${ref} ${best} is outside the range ${range} it names`;
     }
+    resolved.set(ref, best);
+    for (const next of Object.entries(catalog.manifest(ref, best)?.uses ?? {})) if (!resolved.has(next[0])) queue.push(next);
   }
   return { resolved, outside };
 }

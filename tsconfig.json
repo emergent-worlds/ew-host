@@ -9,7 +9,7 @@
     "declaration": true,
     "outDir": "dist",
     "rootDir": ".",
-    "lib": ["ES2023", "DOM"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "skipLibCheck": true
   },
   "include": ["src", "test"]
