@@ -311,3 +311,15 @@ describe("the folder's own port", () => {
     expect(events).toEqual([{ level: 'notable', text: 'the moneylender appears' }]);
   });
 });
+
+describe('requests as a folder writes them (ew-host 0.2.2)', () => {
+  it('reads a model request with no kind as a text request (R1)', async () => {
+    const { ModelRequest } = await import('../src/protocol.js');
+    expect(ModelRequest.parse({ messages: [{ role: 'user', content: 'The tide at Salt Harbor' }] })).toMatchObject({ kind: 'text', stream: false });
+    expect(ModelRequest.parse({ kind: 'image', prompt: 'The harbour bell at dusk' })).toMatchObject({ kind: 'image', width: 1024 });
+  });
+  it('keeps the query fields an engine does not know, so it can report them (R3)', async () => {
+    const { StateQuery } = await import('../src/protocol.js');
+    expect(StateQuery.parse({ kind: 'variable', mood: 'calm' })).toMatchObject({ kind: 'variable', mood: 'calm', limit: 50 });
+  });
+});

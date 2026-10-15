@@ -1,6 +1,6 @@
 {
   "name": "@emergent-worlds/host",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "The host contract of Emergent Worlds: the manifest, interface, and contract schemas, the message vocabulary between a folder and its host, the resolver of uses, and the compatibility marks.",
   "license": "Apache-2.0",
   "type": "module",
@@ -14,6 +14,14 @@
     "./loader": {
       "types": "./dist/loader.d.ts",
       "import": "./dist/loader.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js"
+    },
+    "./port": {
+      "types": "./dist/port.d.ts",
+      "import": "./dist/port.js"
     }
   },
   "files": [

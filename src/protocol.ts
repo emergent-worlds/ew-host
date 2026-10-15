@@ -87,7 +87,7 @@ export const StateQuery = z.object({
   where: z.string().max(1000).optional(),
   limit: z.number().int().min(1).max(500).default(50),
   cursor: z.string().optional(),
-});
+}).passthrough(); // an engine reports the fields it does not know in `omitted`, so they reach it
 export type StateQuery = z.infer<typeof StateQuery>;
 
 /** An item of a preview: one line a person can read, with the ids it touches. */
@@ -161,9 +161,13 @@ export const ImageModelRequest = z.object({
   width: z.number().int().min(64).max(2048).default(1024),
   height: z.number().int().min(64).max(2048).default(1024),
 });
-export const ModelRequest = z.discriminatedUnion('kind', [TextModelRequest, ImageModelRequest]);
+/** A request with no `kind` is a text request, as `TextModelRequest`'s default says. */
+export const ModelRequest = z.preprocess(
+  (r) => (r && typeof r === 'object' && !('kind' in r) ? { ...r, kind: 'text' } : r),
+  z.discriminatedUnion('kind', [TextModelRequest, ImageModelRequest]),
+);
 export type ModelRequest = z.infer<typeof ModelRequest>;
-export type ModelRequestIn = z.input<typeof ModelRequest>;
+export type ModelRequestIn = z.input<typeof TextModelRequest> | z.input<typeof ImageModelRequest>;
 
 /** The reply to a text call: the prose, the notices the platform raised, and the compute it drew. */
 export const TextModelReply = z.object({ text: z.string(), notices: z.array(z.string()).default([]), drawUnits: z.number().nonnegative().default(0), exchangeId: z.string().optional() });
