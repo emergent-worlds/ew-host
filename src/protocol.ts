@@ -260,6 +260,12 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('file.pick'), accept: z.array(z.string().min(1)).min(1) }),
   /** A file the person exports; the App saves it through the dialog on a computer and the share sheet on a phone. */
   z.object({ ...req, type: z.literal('file.export'), name: z.string().min(1).max(200), mime: z.string().min(1), data: z.string() }),
+  /**
+   * The folder asks the App to open one of the App's own surfaces over the frame, which pauses the
+   * Reality as the corners do: Saves, the copy flow (MR1.3), the rating (PV10), or a start from a
+   * scene's save. No reply; the App may decline silently where the surface does not apply.
+   */
+  z.object({ ...base, type: z.literal('app.open'), what: z.enum(['saves', 'copy', 'rate', 'start-from']), detail: z.string().max(200).optional() }),
   /** The person's preferences for this folder, kept per account across Realities and devices (at most 2 MiB as JSON). */
   z.object({ ...req, type: z.literal('prefs.set'), prefs: z.unknown() }),
   z.object({ ...base, type: z.literal('error'), message: z.string().max(2000) }),
@@ -290,6 +296,10 @@ export function permitted(msg: FolderMessage, asks: z.infer<typeof Asks>): { ok:
     case 'save':
       return asks.saves ? { ok: true } : { ok: false, reason: 'the folder did not ask for saves' };
     case 'model.call': {
+      // The every-line routing call is the agent's own job (D11): granted to any folder that asks for
+      // the agent, with the agent's prompt and bounds supplied by the host, and never a job a person
+      // chooses a model for.
+      if (msg.job === 'agent.route') return asks.agent !== 'none' && msg.request.kind !== 'image' ? { ok: true } : { ok: false, reason: 'the folder did not ask for the agent' };
       if (!asks.models) return { ok: false, reason: 'the folder did not ask for models' };
       const jobs = msg.request.kind === 'image' ? asks.models.image_jobs : asks.models.jobs;
       return jobs.includes(msg.job) ? { ok: true } : { ok: false, reason: `the folder names no ${msg.request.kind} job ${msg.job}` };

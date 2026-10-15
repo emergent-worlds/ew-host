@@ -323,3 +323,17 @@ describe('requests as a folder writes them (ew-host 0.2.2)', () => {
     expect(StateQuery.parse({ kind: 'variable', mood: 'calm' })).toMatchObject({ kind: 'variable', mood: 'calm', limit: 50 });
   });
 });
+
+describe('the pack asks of the App (ew-host 0.2.3)', () => {
+  it('grants the routing call to a folder that asks for the agent, without naming it in jobs', async () => {
+    const { permitted, FolderMessage } = await import('../src/protocol.js');
+    const call = FolderMessage.parse({ ew: 1, id: 1, type: 'model.call', job: 'agent.route', request: { messages: [{ role: 'user', content: 'ring the harbour bell' }], maxTokens: 4 } });
+    const asks = Manifest.parse(saltHarbor).asks!;
+    expect(permitted(call, asks)).toEqual({ ok: true });
+    expect(permitted(call, { ...asks, agent: 'none' }).ok).toBe(false);
+  });
+  it('lets a folder ask the App to open its own surfaces', async () => {
+    const { FolderMessage } = await import('../src/protocol.js');
+    expect(FolderMessage.parse({ ew: 1, type: 'app.open', what: 'start-from', detail: 'the first moment' })).toMatchObject({ what: 'start-from' });
+  });
+});
