@@ -32,6 +32,10 @@ describe('the journeys hooks inside a Reality page (ew-host 0.3.0)', () => {
     field.focus();
     await answerFrameRequest('key', { key: 'Enter' });
     expect(entered).toBe('Enter');
+    entered = '';
+    (document.activeElement as HTMLElement | null)?.blur();
+    await answerFrameRequest('key', { key: 'Enter', board: 'FirstMoment', label: 'your line' });
+    expect(entered).toBe('Enter');
   });
   it('never names a typed value in an error', async () => {
     await expect(answerFrameRequest('type', { board: 'Nowhere', label: 'your line', value: 'a secret line' })).rejects.toThrow(/^(?!.*a secret line)/);

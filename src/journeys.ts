@@ -168,8 +168,12 @@ export async function answerFrameRequest(method: FrameMethod, params: FrameSelec
       enter(one(params), params.value ?? '', params.replace ?? true);
       return { ok: true };
     case 'key': {
-      // A key pressed on the focused element, as a person presses it (Enter sends a typed line).
-      const el = (document.activeElement ?? document.body) as HTMLElement;
+      // A key pressed on the element the selector names, or on the focused element when none is named
+      // (Enter sends a typed line). A host cannot always give a cross-origin frame focus, so a journey
+      // names the field it typed into.
+      const named = params.board || params.part || params.row || params.label || params.text;
+      const found = named ? one(params) : null;
+      const el = ((found && (found.closest('input, textarea') ?? found.querySelector('input, textarea') ?? found)) ?? document.activeElement ?? document.body) as HTMLElement;
       const key = params.key ?? 'Enter';
       for (const t of ['keydown', 'keypress', 'keyup'] as const) el.dispatchEvent(new KeyboardEvent(t, { key, code: key, bubbles: true, cancelable: true }));
       if (key === 'Enter' && el instanceof HTMLInputElement) el.form?.requestSubmit();
