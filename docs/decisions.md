@@ -2,6 +2,22 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: startCore starts a classic worker that imports the core and holds the page's messages until it listens (0.3.3)
+
+**Decision.** `startCore(url)` (`src/start-core.ts`, exported from the loader) starts the core with `new Worker(blobUrl)`, a classic worker, whose bootstrap imports the core with a dynamic `import()` of its absolute URL. Until the import has resolved, the bootstrap holds every message the worker receives, stops it reaching any other listener, and then dispatches each again in order with its ports, so the page's two handoffs (`handPort` and the pack's own port) reach the core once each. A core that does not load is thrown from the worker's global scope, which the page receives as the worker's error event, as before. `scripts/worker-check.mjs` (`pnpm check:worker`) loads the frame on 127.0.0.1 in an iframe sandboxed with `allow-scripts` only, under a parent on another port, with the App's headers and policy, and starts a core that imports a module under `/uses/` statically and another dynamically, the second loading a WebAssembly module, while both are served late and a third message arrives during the core's own import. It measured:
+
+| Case | Chromium 156 (Playwright) | WebKit 27.2 (Playwright) | Gecko, Firefox 157 (Playwright) |
+| --- | --- | --- | --- |
+| `startCore`, a core that loads | both handoffs and their ports arrive once each, the late message once, the WebAssembly answers, worker origin `null` | the same | the same |
+| `startCore`, a core that does not load | error event | error event | error event |
+| the module bootstrap of 0.3.0 to 0.3.2 | error event before the worker runs | runs | runs |
+
+Without the step that stops a held message reaching other listeners, a core listening at its top level and then awaiting an import received the late message twice in Chromium, so the bootstrap keeps that step. The classic form runs on all three engines, so no engine keeps the module form and nothing is detected.
+
+**Alternatives.** The module form for WebKit alone, chosen by detection (not needed, since WebKit runs the classic form); a module worker from a `data:` URL (needs `data:` in the frame's `worker-src`); holding the messages on the page until the core says it listens (a second handshake in every pack's page and core).
+
+**Rationale.** The App's request 9 (ew-app docs/ew-host-requests.md): on WebView2 and Android's WebView the pack's page loads and its core never starts, and the Reality stops at the 20 second opening ceiling (wave 2 faults 27 and 30).
+
 ## 2026-10-15: Marks read uses transitively; the journeys drive a Reality's page through hooks of its own
 
 **Decision.** (1) `resolveUses` follows each used folder's own uses, so a Reality that names its pack reaches the engine and the pack's contract is checked against it. (2) A page starts its core with `startCore(url)`, a `blob:` bootstrap that imports the core by its absolute URL, since a sandboxed page cannot start a worker from its own URL. (3) `HostBridge` passes `app.open` to `HostHandlers.appOpen`, and a folder's `Host.open` sends it. (4) A progress of 1, or the first status line, tells the host the folder has opened. (5) `installJourneysHooks()` answers find, click, type, wait, read, and screen on the page's own elements, with the App seam's selector, only for the parent window and only once the App's handoff of the port says `journeys: true`; errors never repeat a typed value.

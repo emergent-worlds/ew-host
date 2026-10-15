@@ -1,6 +1,6 @@
 {
   "name": "@emergent-worlds/host",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "The host contract of Emergent Worlds: the manifest, interface, and contract schemas, the message vocabulary between a folder and its host, the resolver of uses, and the compatibility marks.",
   "license": "Apache-2.0",
   "type": "module",
@@ -36,6 +36,7 @@
     "build": "tsc -p tsconfig.build.json && node scripts/emit-schemas.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "check:worker": "pnpm build && node scripts/worker-check.mjs",
     "prepare": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
@@ -46,6 +47,7 @@
     "@types/node": "^24.0.0",
     "@types/semver": "^7.5.8",
     "jsdom": "25.0.1",
+    "playwright": "1.64.1",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0",
     "zod-to-json-schema": "^3.24.0"
