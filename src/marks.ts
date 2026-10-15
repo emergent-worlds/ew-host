@@ -12,10 +12,12 @@
  * - may work: everything else, including a version outside a range or a folder
  *   that states no contract. The person can try it, and one undo returns.
  *
- * Pictures (the operator, 2026-10-15): where none can be made for this person (an
- * own key whose provider has no image model, or no provider they allow makes
- * pictures), a Reality that asks for pictures runs without them and may work, with
- * the reason; one whose manifest says it needs them won't work.
+ * Pictures (the operator, 2026-10-15): the caller passes whether every image job
+ * the folder names can be made for this person, resolved per job (the image job's
+ * model, its provider among those the person allows, and the job's route), and the
+ * reason for the first that cannot. Where one cannot, a Reality that asks for
+ * pictures runs without them and may work, with the reason; one whose manifest says
+ * it needs them won't work.
  */
 import semver from 'semver';
 import type { Manifest } from './manifest.js';
@@ -39,7 +41,11 @@ export interface Catalog {
 
 export type Device = 'computer' | 'phone';
 
-/** Whether pictures can be made for this person, and if not, the line saying why. */
+/**
+ * Whether every image job the folder names can be made for this person, each
+ * resolved on its own (its model, that model's provider among those the person
+ * allows, and the job's route), and if not, the line saying why the first cannot.
+ */
 export interface Pictures {
   available: boolean;
   reason: string;

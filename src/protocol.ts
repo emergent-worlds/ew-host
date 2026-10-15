@@ -245,7 +245,7 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('status'), line: z.string().max(140) }),
   /** A save, for a reason: the complete tree, with bytes for what changed. The reply is `{ version, seq, at }`. */
   z.object({ ...req, type: z.literal('save'), reason: SaveReason, files: z.array(SavedFile).max(10000), name: z.string().max(80).optional() }),
-  /** A model call for a job the folder names; the host routes it on the person's compute or own key. */
+  /** A model call for a job the folder names; the host resolves the job's model and routes the call by that job's route (plan compute or the person's own key). */
   z.object({ ...req, type: z.literal('model.call'), job: z.string().min(1), request: ModelRequest }),
   /** Withdraw a request of the folder's own that is still pending (a model call); the host answers it `ok: false`. */
   z.object({ ...base, type: z.literal('cancel'), id: z.number().int().nonnegative() }),
