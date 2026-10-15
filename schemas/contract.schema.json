@@ -50,7 +50,9 @@
                   "icon",
                   "map-view",
                   "graph-view",
-                  "settings-section"
+                  "settings-section",
+                  "scene-picture",
+                  "artifact-item"
                 ]
               },
               "default": []
@@ -66,7 +68,9 @@
                   "icon",
                   "map-view",
                   "graph-view",
-                  "settings-section"
+                  "settings-section",
+                  "scene-picture",
+                  "artifact-item"
                 ]
               },
               "default": []
@@ -81,6 +85,45 @@
             "type": "string"
           },
           "default": {}
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "recommends": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "default": {}
+        },
+        "keeps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "prefix": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "prefix",
+              "description"
+            ],
+            "additionalProperties": false
+          },
+          "default": []
         }
       },
       "additionalProperties": false

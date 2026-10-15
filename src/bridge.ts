@@ -5,7 +5,7 @@
  * refuses any message for an ask the manifest does not make, and correlates
  * requests with their replies.
  */
-import { FolderMessage, HostMessage, PROTOCOL_VERSION, deliverable, permitted } from './protocol.js';
+import { FolderMessage, HostMessage, PROTOCOL_VERSION, deliverable, permitted, type HostMessageIn, type SaveReason } from './protocol.js';
 import type { Asks } from './manifest.js';
 
 /** The minimum a transport offers. */
@@ -15,7 +15,7 @@ export interface Transport {
   close(): void;
 }
 
-/** A MessagePort as a transport (the App's frame). */
+/** A MessagePort as a transport (the App's frame, a worker). */
 export function portTransport(port: MessagePort): Transport {
   return {
     send: (m) => port.postMessage(m),
@@ -30,20 +30,28 @@ export function portTransport(port: MessagePort): Transport {
 }
 
 type DOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
-type HostOut = DOmit<HostMessage, 'ew'>;
+type HostOut = DOmit<HostMessageIn, 'ew'>;
 type HostRequest = Extract<HostOut, { id: number }>;
 type FolderOf<T extends FolderMessage['type']> = Extract<FolderMessage, { type: T }>;
 
 /** What the host does with each kind of folder message. Requests resolve to a reply's result. */
 export interface HostHandlers {
   ready?(): void;
+  progress?(fraction: number, text?: string): void;
   status?(line: string): void;
+  /** Commits the save as a version; resolves `{ version, seq, at }`. */
   save?(m: FolderOf<'save'>): Promise<unknown>;
-  modelCall?(m: FolderOf<'model.call'>): Promise<unknown>;
+  /** Routes the call; `part` releases a streamed paragraph to the folder before the reply. `signal` is aborted by a `cancel`. */
+  modelCall?(m: FolderOf<'model.call'>, part: (index: number, text: string) => void, signal: AbortSignal): Promise<unknown>;
   event?(m: FolderOf<'event'>): void;
   agentAsk?(m: FolderOf<'agent.ask'>): Promise<unknown>;
+  agentDecide?(m: FolderOf<'agent.decide'>): Promise<unknown>;
   meter?(counts: Record<string, number>): void;
+  /** Resolves `{ data }`, base64, for a path of the folder's tree at the version started from. */
+  fileRead?(path: string): Promise<unknown>;
+  filePick?(accept: string[]): Promise<unknown>;
   fileExport?(m: FolderOf<'file.export'>): Promise<unknown>;
+  prefsSet?(prefs: unknown): Promise<unknown>;
   error?(message: string): void;
   /** A message refused or malformed; the bridge has already answered the folder. */
   refused?(reason: string, raw: unknown): void;
@@ -52,6 +60,8 @@ export interface HostHandlers {
 export class HostBridge {
   private nextId = 1;
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+  private cancels = new Map<number, AbortController>();
+  private saveWaiters: { reason: SaveReason; resolve: (v: unknown) => void; reject: (e: Error) => void }[] = [];
   private unsubscribe: () => void;
 
   constructor(
@@ -73,7 +83,7 @@ export class HostBridge {
     return true;
   }
 
-  /** Sends a request to the folder (state.*, change.*, save.request) and waits for its reply. */
+  /** Sends a request to the folder (pause, resume, state.*, change.*, layout.*) and waits for its reply. */
   request(message: DOmit<HostRequest, 'id'>): Promise<unknown> {
     const id = this.nextId++;
     const full = { ew: PROTOCOL_VERSION, id, ...message } as HostMessage;
@@ -93,10 +103,35 @@ export class HostBridge {
     });
   }
 
+  /**
+   * Asks the folder to save for a reason and resolves with the committed version
+   * (what the `save` handler returned) once the folder's `save` for that reason
+   * has been handled; rejects after the bridge's ceiling.
+   */
+  requestSave(reason: SaveReason, name?: string): Promise<unknown> {
+    if (!this.send({ type: 'save.request', reason, ...(name === undefined ? {} : { name }) })) return Promise.reject(new Error('save.request is not granted to this folder'));
+    return new Promise((resolve, reject) => {
+      const waiter = {
+        reason,
+        resolve: (v: unknown) => (clearTimeout(timer), resolve(v)),
+        reject: (e: Error) => (clearTimeout(timer), reject(e)),
+      };
+      const timer = setTimeout(() => {
+        this.saveWaiters = this.saveWaiters.filter((w) => w !== waiter);
+        reject(new Error(`the folder made no save for ${reason} in ${this.timeoutMs} ms`));
+      }, this.timeoutMs);
+      this.saveWaiters.push(waiter);
+    });
+  }
+
   close(): void {
     this.unsubscribe();
     for (const p of this.pending.values()) p.reject(new Error('the folder closed'));
     this.pending.clear();
+    for (const w of this.saveWaiters) w.reject(new Error('the folder closed'));
+    this.saveWaiters = [];
+    for (const c of this.cancels.values()) c.abort();
+    this.cancels.clear();
     this.transport.close();
   }
 
@@ -130,20 +165,59 @@ export class HostBridge {
     switch (m.type) {
       case 'ready':
         return this.handlers.ready?.();
+      case 'progress':
+        return this.handlers.progress?.(m.fraction, m.text);
       case 'status':
         return this.handlers.status?.(m.line);
-      case 'save':
-        return answer(m.id, this.handlers.save && (() => this.handlers.save!(m)));
-      case 'model.call':
-        return answer(m.id, this.handlers.modelCall && (() => this.handlers.modelCall!(m)));
+      case 'save': {
+        const waiters = this.saveWaiters.filter((w) => w.reason === m.reason);
+        this.saveWaiters = this.saveWaiters.filter((w) => w.reason !== m.reason);
+        if (!this.handlers.save) {
+          for (const w of waiters) w.reject(new Error('save is not handled by this host'));
+          return answer(m.id, undefined);
+        }
+        try {
+          const result = await this.handlers.save(m);
+          this.reply(m.id, true, result);
+          for (const w of waiters) w.resolve(result);
+        } catch (e) {
+          this.reply(m.id, false, undefined, (e as Error).message);
+          for (const w of waiters) w.reject(e as Error);
+        }
+        return;
+      }
+      case 'model.call': {
+        if (!this.handlers.modelCall) return answer(m.id, undefined);
+        const controller = new AbortController();
+        this.cancels.set(m.id, controller);
+        const part = (index: number, text: string) => this.transport.send({ ew: PROTOCOL_VERSION, type: 'model.part', reply_to: m.id, index, text });
+        try {
+          this.reply(m.id, true, await this.handlers.modelCall(m, part, controller.signal));
+        } catch (e) {
+          this.reply(m.id, false, undefined, controller.signal.aborted ? 'cancelled' : (e as Error).message);
+        } finally {
+          this.cancels.delete(m.id);
+        }
+        return;
+      }
+      case 'cancel':
+        return this.cancels.get(m.id)?.abort();
       case 'event':
         return this.handlers.event?.(m);
       case 'agent.ask':
         return answer(m.id, this.handlers.agentAsk && (() => this.handlers.agentAsk!(m)));
+      case 'agent.decide':
+        return answer(m.id, this.handlers.agentDecide && (() => this.handlers.agentDecide!(m)));
       case 'meter':
         return this.handlers.meter?.(m.counts);
+      case 'file.read':
+        return answer(m.id, this.handlers.fileRead && (() => this.handlers.fileRead!(m.path)));
+      case 'file.pick':
+        return answer(m.id, this.handlers.filePick && (() => this.handlers.filePick!(m.accept)));
       case 'file.export':
         return answer(m.id, this.handlers.fileExport && (() => this.handlers.fileExport!(m)));
+      case 'prefs.set':
+        return answer(m.id, this.handlers.prefsSet && (() => this.handlers.prefsSet!(m.prefs)));
       case 'error':
         return this.handlers.error?.(m.message);
       case 'reply': {

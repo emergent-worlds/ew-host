@@ -30,6 +30,7 @@
               "saves",
               "while_away",
               "players",
+              "agent.read",
               "agent.change",
               "models"
             ]
@@ -43,6 +44,36 @@
         "forecasts": {
           "type": "boolean",
           "default": false
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "parts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "default": {}
+        },
+        "state": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,39}$"
+          },
+          "default": []
+        },
+        "format": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "default": 1
         }
       },
       "required": [

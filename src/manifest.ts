@@ -74,6 +74,9 @@ export const Entry = z
   .refine((e) => e.web !== undefined || e.installs !== undefined, 'an entry names a web page, builds that install, or both');
 export type Entry = z.infer<typeof Entry>;
 
+/** A job a folder names for a model call (the files page, Section 5, models). */
+export const JobName = z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/);
+
 /** Where a folder draws (the files page, Section 5, surface). */
 export const SurfaceAsk = z.enum(['none', 'full', 'panel', 'window']);
 /** What reaches a folder (the files page, Section 5, input). */
@@ -84,8 +87,17 @@ export const Asks = z.object({
   surface: SurfaceAsk.default('none'),
   input: z.array(InputKind).default([]),
   saves: z.boolean().default(false),
-  /** The jobs the folder names for model calls; the person chooses the model for each (S3 3.2b). */
-  models: z.object({ jobs: z.array(z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/)).min(1) }).optional(),
+  /**
+   * The jobs the folder names for model calls; the person chooses the model for
+   * each (S3 3.2b). `jobs` call a language model; `image_jobs` call an image model
+   * and are granted only where the route offers one (the wave 2 design, D10).
+   */
+  models: z
+    .object({
+      jobs: z.array(JobName).min(1),
+      image_jobs: z.array(JobName).default([]),
+    })
+    .optional(),
   /** The platform's agent inside the folder, and its reach (the files page, Section 5, the agent). */
   agent: z.enum(['none', 'read', 'change']).default('none'),
   /** The named hosts the folder may reach, if any. */
@@ -114,8 +126,11 @@ export const Manifest = z
     tags: z.array(z.string().regex(/^[a-z0-9][a-z0-9 -]{0,39}$/)).max(20).default([]),
   })
   .superRefine((m, ctx) => {
-    if (m.asks && !m.entry) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['asks'], message: 'only a folder that runs (one with an entry) makes asks' });
+    // A folder that runs makes asks. A Reality with no entry of its own takes the
+    // entry of the nearest folder in its uses that names one, usually its pack
+    // (the wave 2 design, D5); the resolver finds it.
+    if (m.asks && !m.entry && Object.keys(m.uses).length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['asks'], message: 'only a folder that runs (one with an entry, or one that uses a folder with an entry) makes asks' });
     }
     const needsHeadless = m.asks && (m.asks.while_away || m.asks.players > 1);
     if (needsHeadless && m.entry?.web !== undefined && m.entry.headless === undefined) {

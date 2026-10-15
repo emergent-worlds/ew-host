@@ -201,6 +201,14 @@
                     "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
                   },
                   "minItems": 1
+                },
+                "image_jobs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                  },
+                  "default": []
                 }
               },
               "required": [
