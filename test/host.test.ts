@@ -100,11 +100,11 @@ describe('the interface and contract files', () => {
       adds: { gives: ['dashboard-line', 'scene-picture', 'artifact-item'] },
       fits: { '@emergentworlds/emergence-engine': '^1' },
       module: 'dist/core.js',
-      recommends: { narration: 'anthropic.large', mechanics: 'anthropic.small' },
+      recommends: { narration: 'test.large', mechanics: 'test.small' },
       keeps: [{ prefix: 'np/', description: 'the pack slice: player, scene, pins' }],
     });
     expect(c.adds.gives).toContain('scene-picture');
-    expect(c.recommends.narration).toBe('anthropic.large');
+    expect(c.recommends.narration).toBe('test.large');
   });
 
   it('refuses a slot the contract does not name', () => {
