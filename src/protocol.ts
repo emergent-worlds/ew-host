@@ -40,7 +40,12 @@ export const FolderPath = z
 
 const Sha256 = z.string().regex(/^[0-9a-f]{64}$/);
 
-/** One file of a save's listing. The listing is the complete tree: a path absent from it is a deleted file. */
+/**
+ * One file of a save's listing. The listing is the complete tree: a path absent from it is a deleted file.
+ * Files the host itself writes into a folder whose core is running (the agent's files, its provenance) are
+ * the host's to keep: the host merges them into the version it makes from the core's next save, so the
+ * core's listing never deletes them.
+ */
 export const SavedFile = z.object({
   path: FolderPath,
   sha256: Sha256,

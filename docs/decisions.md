@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: The host keeps the files it writes into a running folder
+
+**Decision.** A save's listing is the folder core's complete tree, so a file absent from it is deleted. Files the host writes into a folder whose core is running (the agent's files and their provenance) are merged by the host into the version it makes from the core's next save; a core's listing never deletes them.
+
+**Alternatives.** The agent writes only through the core (a second write path through every pack); the listing as a diff (a lost message loses a deletion).
+
+**Rationale.** The agent writes files beside a running Reality in the terminal and the build (ew-agent's request, 2026-10-15), and the complete tree keeps saves simple to check.
+
 ## 2026-10-15: The host contract terminates in the folder's core, which runs in a worker everywhere
 
 **Decision.** A folder's headless module (its core) is the one end of the host contract: the page receives the App's port with `framePort()` and hands it to the core's worker with `handPort()`, where `workerPort()` and `connect()` take it; the hidden runner and a server hand the same core a transport directly. The page talks to its core over the folder's own port (`src/port.ts`), a call-and-reply envelope the engine's nine calls and a pack's own calls ride. The resolved uses are served under `/uses/<ref>/` on the folder's origin, and the grant lists them with their versions and kinds.
