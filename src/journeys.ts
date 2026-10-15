@@ -20,7 +20,7 @@ export interface FrameSelector {
 }
 
 /** What the parent sends: `{ ewSeam: 1, id, method, params }`; the answer is `{ ewSeam: 1, reply_to, ok, result | error }`. */
-export type FrameMethod = 'find' | 'click' | 'type' | 'wait' | 'read' | 'screen';
+export type FrameMethod = 'find' | 'click' | 'type' | 'key' | 'wait' | 'read' | 'screen';
 
 const collapse = (s: string | null | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
 /** CSS.escape where the page has it; a quote-and-backslash escape where it does not. */
@@ -157,7 +157,7 @@ function screen() {
 }
 
 /** Answers one request; exported for tests. */
-export async function answerFrameRequest(method: FrameMethod, params: FrameSelector & { value?: string; replace?: boolean; gone?: boolean; timeoutMs?: number }): Promise<unknown> {
+export async function answerFrameRequest(method: FrameMethod, params: FrameSelector & { value?: string; replace?: boolean; gone?: boolean; timeoutMs?: number; key?: string }): Promise<unknown> {
   switch (method) {
     case 'find':
       return { found: frameQuery(params).map(describe) };
@@ -167,6 +167,14 @@ export async function answerFrameRequest(method: FrameMethod, params: FrameSelec
     case 'type':
       enter(one(params), params.value ?? '', params.replace ?? true);
       return { ok: true };
+    case 'key': {
+      // A key pressed on the focused element, as a person presses it (Enter sends a typed line).
+      const el = (document.activeElement ?? document.body) as HTMLElement;
+      const key = params.key ?? 'Enter';
+      for (const t of ['keydown', 'keypress', 'keyup'] as const) el.dispatchEvent(new KeyboardEvent(t, { key, code: key, bubbles: true, cancelable: true }));
+      if (key === 'Enter' && el instanceof HTMLInputElement) el.form?.requestSubmit();
+      return { ok: true };
+    }
     case 'wait':
       return wait(params);
     case 'read': {
