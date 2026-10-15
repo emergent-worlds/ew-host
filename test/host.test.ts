@@ -9,7 +9,7 @@ const saltHarbor = {
   description: 'A port town on the edge of a drowned quarter',
   version: '3.0.0',
   owner: '@crowsfeather',
-  uses: { '@emergent-worlds/narrative-protagonist': '^1' },
+  uses: { '@emergentworlds/narrative-protagonist': '^1' },
   derived_from: [],
   terms: { mode: 'monetize', share: 0.25, credit: 'Salt Harbor by @crowsfeather' },
   entry: { web: 'index.html', headless: 'headless.js' },
@@ -50,8 +50,8 @@ describe('the manifest', () => {
   });
 
   it('reads the platform tags from the fields', () => {
-    const m = Manifest.parse({ ...saltHarbor, uses: { '@emergent-worlds/emergence-engine': '^1' }, entry: { ...saltHarbor.entry, installs: { 'linux-x64': 'build/linux' } } });
-    expect(readTags(m, () => 'engine')).toEqual(['uses @emergent-worlds/emergence-engine', 'uses a terminal agent', 'installs on your computer']);
+    const m = Manifest.parse({ ...saltHarbor, uses: { '@emergentworlds/emergence-engine': '^1' }, entry: { ...saltHarbor.entry, installs: { 'linux-x64': 'build/linux' } } });
+    expect(readTags(m, () => 'engine')).toEqual(['uses @emergentworlds/emergence-engine', 'uses a terminal agent', 'installs on your computer']);
   });
 });
 
@@ -64,10 +64,10 @@ describe('the marks', () => {
     engineInterface: (ref) => (ref.endsWith('emergence-engine') ? engine : undefined),
     contract: (ref) => (ref.endsWith('narrative-protagonist') ? packContract : undefined),
   };
-  const reality = Manifest.parse({ ...saltHarbor, uses: { '@emergent-worlds/narrative-protagonist': '^1', '@emergent-worlds/emergence-engine': '^1' } });
+  const reality = Manifest.parse({ ...saltHarbor, uses: { '@emergentworlds/narrative-protagonist': '^1', '@emergentworlds/emergence-engine': '^1' } });
 
   it('works when everything resolves and the engine takes every ask', () => {
-    expect(markFolder(reality, catalog, 'computer', '@emergent-worlds/emergence-engine').mark).toBe('works');
+    expect(markFolder(reality, catalog, 'computer', '@emergentworlds/emergence-engine').mark).toBe('works');
   });
 
   it("won't work when a folder it uses cannot be found", () => {
@@ -76,13 +76,13 @@ describe('the marks', () => {
   });
 
   it('may work when a version is outside the range', () => {
-    const m = Manifest.parse({ ...saltHarbor, uses: { '@emergent-worlds/narrative-protagonist': '^2' } });
+    const m = Manifest.parse({ ...saltHarbor, uses: { '@emergentworlds/narrative-protagonist': '^2' } });
     expect(markFolder(m, catalog, 'computer').mark).toBe('may work');
   });
 
   it("won't work when the engine does not take an ask", () => {
     const m = Manifest.parse({ ...reality, asks: { ...reality.asks!, agent: 'change' } });
-    expect(markFolder(m, catalog, 'computer', '@emergent-worlds/emergence-engine').mark).toBe("won't work");
+    expect(markFolder(m, catalog, 'computer', '@emergentworlds/emergence-engine').mark).toBe("won't work");
   });
 
   it("won't work on a phone when it only installs", () => {
