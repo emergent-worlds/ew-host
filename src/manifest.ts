@@ -96,6 +96,11 @@ export const Asks = z.object({
     .object({
       jobs: z.array(JobName).min(1),
       image_jobs: z.array(JobName).default([]),
+      /**
+       * Whether the Reality needs its pictures, or runs without them where none can be made
+       * (the operator, 2026-10-15): optional unless the manifest says it needs them.
+       */
+      pictures: z.enum(['optional', 'needed']).default('optional'),
     })
     .optional(),
   /** The platform's agent inside the folder, and its reach (the files page, Section 5, the agent). */

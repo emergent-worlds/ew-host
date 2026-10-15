@@ -126,6 +126,12 @@ describe('the marks', () => {
 
   it('works when everything resolves and the engine takes every ask', () => {
     expect(markFolder(reality, catalog, 'computer', '@emergentworlds/emergence-engine').mark).toBe('works');
+    // Pictures (the operator, 2026-10-15): optional unless the manifest needs them.
+    const none = { available: false, reason: 'pictures are not made on this key' };
+    expect(markFolder(reality, catalog, 'computer', '@emergentworlds/emergence-engine', none)).toEqual({ mark: 'may work', reason: 'pictures are not made on this key' });
+    const needs = Manifest.parse({ ...reality, asks: { ...reality.asks, models: { ...reality.asks!.models!, pictures: 'needed' } } });
+    expect(markFolder(needs, catalog, 'computer', '@emergentworlds/emergence-engine', none)).toEqual({ mark: "won't work", reason: 'pictures are not made on this key' });
+    expect(markFolder(needs, catalog, 'computer', '@emergentworlds/emergence-engine', { available: true, reason: '' }).mark).toBe('works');
   });
 
   it("won't work when a folder it uses cannot be found", () => {

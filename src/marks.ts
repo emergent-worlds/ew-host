@@ -11,6 +11,11 @@
  *   ask the engine does not take, or an entry this device cannot run.
  * - may work: everything else, including a version outside a range or a folder
  *   that states no contract. The person can try it, and one undo returns.
+ *
+ * Pictures (the operator, 2026-10-15): where none can be made for this person (an
+ * own key whose provider has no image model, or no provider they allow makes
+ * pictures), a Reality that asks for pictures runs without them and may work, with
+ * the reason; one whose manifest says it needs them won't work.
  */
 import semver from 'semver';
 import type { Manifest } from './manifest.js';
@@ -33,6 +38,12 @@ export interface Catalog {
 }
 
 export type Device = 'computer' | 'phone';
+
+/** Whether pictures can be made for this person, and if not, the line saying why. */
+export interface Pictures {
+  available: boolean;
+  reason: string;
+}
 
 /** The asks whose part the folder's own code must take, from a manifest's asks. */
 export function askParts(m: Manifest): AskPart[] {
@@ -86,7 +97,7 @@ export function resolveEntry(m: Manifest, catalog: Catalog, resolved: Map<string
  * uses, for one device. `engineRef` names the engine the folder runs on, found
  * through its uses.
  */
-export function markFolder(m: Manifest, catalog: Catalog, device: Device, engineRef?: string): MarkResult {
+export function markFolder(m: Manifest, catalog: Catalog, device: Device, engineRef?: string, pictures?: Pictures): MarkResult {
   if (device === 'phone' && m.entry && m.entry.web === undefined && m.entry.installs) {
     return { mark: "won't work", reason: 'it installs on a computer and has no entry for a phone' };
   }
@@ -124,6 +135,11 @@ export function markFolder(m: Manifest, catalog: Catalog, device: Device, engine
         }
       }
     }
+  }
+  const images = m.asks?.models?.image_jobs.length ? m.asks.models : undefined;
+  if (images && pictures && !pictures.available) {
+    if (images.pictures === 'needed') return { mark: "won't work", reason: pictures.reason };
+    mayWork ??= pictures.reason;
   }
   if (mayWork) return { mark: 'may work', reason: mayWork };
   return { mark: 'works', reason: 'everything it needs is there' };

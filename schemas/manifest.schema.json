@@ -209,6 +209,14 @@
                     "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
                   },
                   "default": []
+                },
+                "pictures": {
+                  "type": "string",
+                  "enum": [
+                    "optional",
+                    "needed"
+                  ],
+                  "default": "optional"
                 }
               },
               "required": [
