@@ -1,0 +1,284 @@
+{
+  "$ref": "#/definitions/remote-client-frame",
+  "definitions": {
+    "remote-client-frame": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "ctl"
+            },
+            "type": {
+              "type": "string",
+              "const": "join"
+            },
+            "token": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "v",
+            "ch",
+            "type",
+            "token"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "ctl"
+            },
+            "type": {
+              "type": "string",
+              "const": "resume"
+            },
+            "credential": {
+              "type": "string",
+              "minLength": 1
+            },
+            "lastSeq": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "v",
+            "ch",
+            "type",
+            "credential",
+            "lastSeq"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "ctl"
+            },
+            "type": {
+              "type": "string",
+              "const": "ack"
+            },
+            "seq": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "v",
+            "ch",
+            "type",
+            "seq"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "ctl"
+            },
+            "type": {
+              "type": "string",
+              "const": "leave"
+            }
+          },
+          "required": [
+            "v",
+            "ch",
+            "type"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "port"
+            },
+            "body": {
+              "type": "object",
+              "properties": {
+                "ew": {
+                  "type": "number",
+                  "const": 1
+                },
+                "id": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "call": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "args": {},
+                "from": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "required": [
+                "ew",
+                "id",
+                "call"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "v",
+            "requestId",
+            "ch",
+            "body"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "input"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "text",
+                "pointer",
+                "keys",
+                "touch"
+              ]
+            },
+            "data": {}
+          },
+          "required": [
+            "v",
+            "requestId",
+            "ch",
+            "kind",
+            "data"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "agent"
+            },
+            "type": {
+              "type": "string",
+              "const": "ask"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "v",
+            "requestId",
+            "ch",
+            "type",
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "v": {
+              "type": "number",
+              "const": 1
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ch": {
+              "type": "string",
+              "const": "agent"
+            },
+            "type": {
+              "type": "string",
+              "const": "decide"
+            },
+            "decision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "choice": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "v",
+            "requestId",
+            "ch",
+            "type",
+            "decision",
+            "choice"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -15,3 +15,4 @@ export { loopbackTransport, SOCKET_FRAME_BYTES } from './loopback.js';
 export type { LoopbackOptions, SocketLike } from './loopback.js';
 export { workerTransport, WORKER_STARTUP_MESSAGES } from './worker.js';
 export type { NodeWorkerEndpoint, WebWorkerEndpoint } from './worker.js';
+export * from './remote-schema.js';

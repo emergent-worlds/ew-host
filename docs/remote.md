@@ -1,0 +1,13 @@
+# Remote player connection
+
+The permanent files record and the cycle's E8 wire contract define protocol version 1. `RemoteClientFrame` and `RemoteServerFrame` validate its distinct directions. `parseRemoteClientFrame` and `parseRemoteServerFrame` accept JSON text only, enforce the 4 MiB UTF-8 bound, and throw fixed errors without echoing input. The corresponding encode helpers refuse non-JSON values and oversized frames. The same schemas are emitted under `schemas/` for other bindings.
+
+The first client control frame is join with its one-use ticket, or resume with the separate rotating credential and last applied sequence. Admission returns slot, trusted sender, epoch, and the new opaque resume credential. Credentials belong only to these control frames and memory. Account ids remain server-side. They never belong in a URL, diagnostic, snapshot, player list, or folder RPC.
+
+Entry installs an authoritative per-person page snapshot, receives the synchronization boundary, acknowledges that exact boundary, and waits for ready before input. Resume installs a replacement snapshot or contiguous replay. Sequenced notices are positive safe integers; a snapshot can start at zero. Duplicates are ignored, while a gap requires synchronization. The server flushes notices queued beyond the acknowledged boundary before ready; ready's sequence is the latest issued sequence after that flush.
+
+Folder calls and replies carry a stable opaque requestId independently from the folder port's numeric id. Input and agent operations use the same request identity principle. Retries retain requestId and never choose sender or paying account. The server stamps sender, deduplicates concurrently pending and completed work for the slot, and unicasts its reply. A changed request under the same identity is refused. Epoch loss prevents blind retry of uncertain operations.
+
+The four channels are folder port, input, agent, and control. These envelopes do not include grants, file access, model calls, saves, or other privileged host controls. A structurally valid folder method is not an authorized one. The server's injected folder adapter defaults to denying guest calls and must explicitly authorize each method and supply the requesting person's projection. Read, query and forecast are also private until such an adapter authorizes and projects them.
+
+At the wire-schema slice, remote client reconnect and server admission/replay implementations remain in progress. Shape tests do not establish platform ticket consumption, per-character pack projections, multiplayer acceptance, or security isolation.

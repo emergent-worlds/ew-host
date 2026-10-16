@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Validate the remote player wire by direction
+
+**Decision.** Export distinct RemoteClientFrame and RemoteServerFrame schemas with fixed-error JSON codecs and emitted JSON Schemas. They carry E8's four player channels and synchronization controls, with safe integer sequences and port ids, a separate opaque request id, and no host/core vocabulary. Admitted resume credentials are opaque strings; trusted account identities remain server-side.
+
+**Alternatives.** Reuse the privileged host vocabulary, or let the server and App define separate wire shapes.
+
+**Rationale.** The permanent files record and the cycle's canonical E8 wire clarification define one direction-specific contract. Strict outer objects reject unknown authority fields. Server admission, sender stamping, method authorization, projection and request deduplication remain server obligations; a valid envelope grants no capability.
+
 ## 2026-10-15: Preserve the authenticated sender across folder dispatch
 
 **Decision.** PortCall accepts optional from and servePort passes it separately from arguments. Remote adapters must overwrite this value from authenticated admission. Port closure rejects waiters and suppresses delayed replies.
