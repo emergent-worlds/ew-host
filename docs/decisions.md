@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Preserve the authenticated sender across folder dispatch
+
+**Decision.** PortCall accepts optional from and servePort passes it separately from arguments. Remote adapters must overwrite this value from authenticated admission. Port closure rejects waiters and suppresses delayed replies.
+
+**Alternatives.** Trust a sender inside call arguments or lose sender identity before the pack handles the call.
+
+**Rationale.** E8 assigns sender stamping to the server and per-person behavior to pack handlers. The generic dispatch seam transports that identity without claiming to authenticate it.
+
 ## 2026-10-15: Host-owned away recap metadata
 
 **Decision.** The optional grant away object carries pace and authoritative monthly compute percentage, with null for unavailable usage. The page may open the away App surface through its own connection.
