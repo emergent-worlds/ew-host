@@ -9,3 +9,12 @@ it('checks authored prefix, counter/hash/tick continuity and distinct admitted c
  for (const change of [{ id: 'invented' }, { inputSha256: hash }, { beforeTick: 0 }, { beforeHash: hash }, { afterTurns: 1 }, { callFrom: 2 }, { callTo: 1 }]) expect(() => checkedStudioSampling({ ...value, turns: [first, { ...second, ...change }] }, 20, authored)).toThrow();
  expect(() => checkedStudioSampling(value, 1, authored)).toThrow(); expect(() => checkedStudioSampling({ ...value, clean: true }, 20, authored)).toThrow();
 });
+it('rejects reused description identities or classifier work and hashes the actual ordered prompt words', async () => {
+ const { studioSamplingPrompt } = await import('../src/studio-sampling.js');
+ const item={sourceSha256:hash,textSha256:next,callSequence:1}, result={state:'unavailable',detail:'Named inventory only.',descriptions:{scope:'fixture.saved-descriptions.v1',items:[item]}};
+ expect(checkedStudioSampling(result,20,authored).descriptions!.items).toHaveLength(1);
+ expect(()=>checkedStudioSampling({...result,descriptions:{...result.descriptions,items:[item,{...item,sourceSha256:next}]}},20,authored)).toThrow();
+ expect(()=>checkedStudioSampling({...result,descriptions:{...result.descriptions,items:[item,{...item,callSequence:2}]}},20,authored)).toThrow();
+ expect(studioSamplingPrompt({messages:[{role:'user',content:'Salt Harbor 🌊'}]})).toBe(JSON.stringify({system:null,messages:[{role:'user',content:'Salt Harbor 🌊'}]}));
+ expect(studioSamplingPrompt({system:'Actual saved instructions',messages:[{role:'user',content:'look'},{role:'assistant',content:'reply'}]})).not.toBe(studioSamplingPrompt({system:'Actual saved instructions',messages:[{role:'assistant',content:'reply'},{role:'user',content:'look'}]}));
+});

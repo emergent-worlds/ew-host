@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Correlate actual sampling coverage without content retention
+
+**Decision.** Standardize actual prompt-word encoding and optional digest-only description inventories with unique source identities and distinct ordered classifier sequences. Leave counts and verdict correlation to the retained parent authority.
+
+**Alternatives.** A free-form clean flag or call count would not bind actual text. Retaining prompt/description words in metadata would extend their established retention.
+
+**Rationale.** Source68a07b25bb requires actual named coverage prerequisites while arbitrary-entry completeness, full PV54 and publication remain unclaimed.
+
 ## 2026-10-16: Verify measured sampled-turn observations against authored inputs
 
 **Decision.** Add strict dependency and turn observations with authored input digests, counter/tick/state continuity and ordered distinct call spans. Keep unavailable/failed outcomes and reject arbitrary clean/count flags.
