@@ -290,7 +290,10 @@ export type FolderMessage = z.infer<typeof FolderMessage>;
 export const AgentReply = z.object({
   text: z.string(),
   /** A decision asked of the person, drawn as a card by whoever shows the reply. */
-  decision: z.object({ id: z.string().min(1), text: z.string().max(500), choices: z.array(z.string().min(1).max(80)).min(1) }).optional(),
+  decision: z.object({ id: z.string().min(1), text: z.string().max(500), choices: z.array(z.string().min(1).max(80)).min(1),
+    /** Actual stored card kind. Only explicit other is a private question; absence grants no exception. */
+    kind: z.enum(['build', 'change', 'layout', 'pause', 'other']).optional(),
+  }).optional(),
   /** A proposal the reply describes, so the folder can draw its preview. */
   proposal: Proposal.optional(),
 });

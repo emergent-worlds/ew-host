@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-16: Public decision classification preserves private questions
+
+**Decision.** AgentReply.decision optionally carries the actual card kind, build, change, layout, pause or other. Only explicit other distinguishes a private question. Older replies omit kind and retain the consumer's conservative change gate; unknown values fail runtime validation. The server independently classifies its durable active-chat card and rechecks authority.
+
+**Alternatives.** Infer authority from button text or proposal presence; treat every decision as a Reality change.
+
+**Rationale.** S12 server-terminal-decision-kind-20261016 permits private answers under read authority while retaining current policy for changes. Undo replies can omit proposal, so proposal presence cannot supply classification. The field is a projection and grants no server authority.
+
 ## 2026-10-16: Await page application across the remote frame boundary
 
 **Decision.** Add optional asynchronous applyNotice to remotePort and await it before sequence advancement, acknowledgement or queued readiness. Abort on connection replacement, matching snapshot installation.
