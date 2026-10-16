@@ -74,3 +74,10 @@ The input selectors accept genuine Uint8Array values across frame realms, while 
 ## Exact-save scenario tool recipes
 
 Optional studioScenario declares its own module, selected own reads and the implemented advance/set_variable tool names. Input carries only exact saved data plus an explicit ordered recipe. Strict results retain actual tick/hash continuity and exact action outcomes, with completed meaning tool execution rather than a semantic assertion. No model/interactive turn or classifier result is fabricated. Unknown tools, changed recipes, skipped completed actions and invented tick deltas refuse. Sourceb9cfaff873 defines this bounded S8.3 prerequisite. The shared saved-input selector is reused by validation/render/scenario so each clones the same confined own data without adding authority.
+
+
+## Authored exact-save sampling declaration
+
+Source51999acf9f adds optional studioSampling metadata on interface and contract: confined module, selected own reads and an explicit saved root corpus path. StudioSamplingCorpus has a name, entry-defined setup and ordered unique named input records. The entry owns what each input means; the host does not invent a player or a twenty-line corpus. studioSamplingInput clones the exact snapshot/manifest/selected bytes and the parsed authored corpus, retaining the caller's requested count without manufacturing missing turns. This is a declaration/input prerequisite only. It grants no model/save port, classifier pass, actual turn count or handoff authority. Production sampling adapters and owner-scoped durable call admission remain separate implementation work.
+
+All132 tests, TypeScript and schema build pass. The two new cases check confined own paths, absent/duplicate input records, selected-byte/corpus cloning and a requested20 count with only one authored input remaining one input. Existing consumers are unchanged until explicitly advanced to this additive declaration; no folder is given a sampling capability merely by this host change.

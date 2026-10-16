@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Declare authored exact-save sampling without manufacturing inputs
+
+**Decision.** Add an optional actual-entry sampling module/corpus declaration and a cloned saved input contract with unique authored input identities. Keep the requested count separate from the number of supplied inputs and expose no model/save authority in this data helper.
+
+**Alternatives.** Reusing folder-only archived exchanges loses exact-save provenance. Generating twenty generic strings would manufacture an unrecorded sample corpus. A declaration cannot certify execution or classifier safety.
+
+**Rationale.** Source51999acf9f defines the bounded PV54 prerequisite before implementation. Actual runtime/model/classifier admission and the first-party turn adapter must independently establish their evidence.
+
 ## 2026-10-16: Record actual scenario tools without inventing semantic passes
 
 **Decision.** Declare exact-save advance/set-variable recipes separately from checks, preserve action/tick/hash continuity and keep model turns/classifier unperformed. Reuse the saved-data selector without any host port.
