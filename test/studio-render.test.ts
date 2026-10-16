@@ -1,3 +1,4 @@
+import { runInNewContext } from 'node:vm';
 import { expect, it } from 'vitest';
 import { Manifest } from '../src/manifest.js';
 import { EngineInterface, FolderContract } from '../src/interface.js';
@@ -16,4 +17,10 @@ it('clones only selected own bytes and display data without carrying extra runti
 it('refuses missing selected bytes, unsafe inventory and case collisions', () => {
   const source = fixture(); expect(() => studioRenderInput(declaration, { ...source, files: new Map() })).toThrow();
   for (const paths of [['../private.txt'], ['uses/@mercerpress/private/file'], ['state/a', 'STATE/a']]) expect(() => studioRenderInput(declaration, { ...source, paths })).toThrow();
+});
+
+it('accepts actual byte arrays from another frame realm without accepting other typed views', () => {
+  const input = fixture(), bytes = runInNewContext('new Uint8Array([4,5])') as Uint8Array;
+  expect(studioRenderInput(declaration, { ...input, files: new Map([['state/engine.json', bytes]]) }).files.get('state/engine.json')).toEqual(new Uint8Array([4, 5]));
+  expect(() => studioRenderInput(declaration, { ...input, files: new Map([['state/engine.json', new Int8Array([4]) as unknown as Uint8Array]]) })).toThrow();
 });

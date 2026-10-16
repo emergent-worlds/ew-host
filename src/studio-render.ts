@@ -22,7 +22,7 @@ export function studioRenderInput(declaration: StudioRenderDeclaration, input: S
   const declared = StudioRenderDeclaration.parse(declaration), snapshot = StudioSnapshot.parse(input.snapshot), files = new Map<string, Uint8Array>();
   if (new Set(input.paths.map(path => path.toLowerCase())).size !== input.paths.length || input.paths.some(path => !portablePath(path) || /[%#]/.test(path) || path.split('/')[0]!.toLowerCase() === 'uses')) throw new Error('invalid Studio own-file inventory');
   for (const path of input.paths) if (declared.reads.some(read => read.endsWith('/') ? path.startsWith(read) : path === read)) {
-    const bytes = input.files.get(path); if (!(bytes instanceof Uint8Array)) throw new Error('selected Studio bytes are missing'); files.set(path, new Uint8Array(bytes));
+    const bytes = input.files.get(path); if (!ArrayBuffer.isView(bytes) || Object.prototype.toString.call(bytes) !== '[object Uint8Array]') throw new Error('selected Studio bytes are missing'); files.set(path, new Uint8Array(bytes));
   }
   return { snapshot, manifest: ManifestSchema.parse(structuredClone(input.manifest)), paths: [...input.paths], files, display: Display.parse(structuredClone(input.display)) };
 }

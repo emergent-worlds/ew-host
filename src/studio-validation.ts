@@ -42,7 +42,7 @@ export function studioValidationInput(declaration: StudioValidationDeclaration, 
   for (const path of input.paths) {
     if (!declared.reads.some(read => read.endsWith('/') ? path.startsWith(read) : path === read)) continue;
     if (!safePath(path) || path.split('/')[0]!.toLowerCase() === 'uses') throw new Error('invalid selected own path');
-    const bytes = input.files.get(path); if (!(bytes instanceof Uint8Array)) throw new Error('selected validation bytes are missing');
+    const bytes = input.files.get(path); if (!ArrayBuffer.isView(bytes) || Object.prototype.toString.call(bytes) !== '[object Uint8Array]') throw new Error('selected validation bytes are missing');
     selected.set(path, new Uint8Array(bytes));
   }
   return { snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, requestedTicks: input.requestedTicks };

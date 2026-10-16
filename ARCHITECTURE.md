@@ -68,3 +68,5 @@ Studio validation continuation, 2026-10-16: optional studioValidation on engine 
 ## Saved Studio render contract
 
 Optional studioRender on interface/contract names a separate confined module and exact/prefix input reads. mountStudio receives an element and an exact saved snapshot, normalized manifest, full own-file inventory, cloned selected bytes and display settings. It returns an update/unmount handle, synchronously or asynchronously. No play, model, save, advance or preference port exists in this input. Reads selects bytes rather than proving filesystem isolation. The App owns the sandboxed bootstrap and authorizes its immutable asset layout separately; ordinary play entries are never substituted. Source23f12380bd defines this initial saved inspection slice. Explicit agent/manual editing and Start/scenario tools remain separate.
+
+The input selectors accept genuine Uint8Array values across frame realms, while refusing other typed views. ArrayBuffer.isView plus the precise typed-array tag avoids instanceof rejecting legitimate structured byte data. A real vm-realm regression covers this boundary.
