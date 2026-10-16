@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Host-owned away recap metadata
+
+**Decision.** The optional grant away object carries pace and authoritative monthly compute percentage, with null for unavailable usage. The page may open the away App surface through its own connection.
+
+**Alternatives.** Derive billing share inside the pack or substitute zero when usage is unavailable.
+
+**Rationale.** NP8 reads simulation changes from the record, while pace and metered usage belong to the host. Canonical files amendment `8ed74c0ddd` defines this boundary.
+
 ## 2026-10-15: Adapt the server worker through the existing transport contract
 
 **Decision.** `workerTransport(worker)` supports the Node worker_threads event emitter and Bun's Worker EventTarget without a runtime-specific import in shipped code. It forwards payloads, reports errors and termination through `onClose`, removes listeners on disposal, and requests termination once. Error text is a fixed transport description. An early startup buffer holds up to 1,000 messages until the bridge subscribes; this is an internal guard, not a limit on attached traffic. The loader and bridge retain schema, ask, and endpoint enforcement.

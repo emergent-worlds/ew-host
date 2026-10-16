@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { HostBridge, Manifest, type Transport } from '../src/index.js';
+import { HostBridge, HostMessage, Manifest, type Transport } from '../src/index.js';
 import { connectCore, connectPage } from '../src/loader.js';
 
 function pair(): [Transport, Transport] {
@@ -23,6 +23,18 @@ describe('split host endpoints (Wave 3 E7)', () => {
     expect('model' in page).toBe(false); expect('save' in page).toBe(false); expect('pick' in core).toBe(false);
     expect(await Promise.all([core.save('own', []), page.prefs({ theme: 'light' })])).toEqual(['core-save', 'page-prefs']);
     coreBridge.close(); pageBridge.close();
+  });
+  it('carries authoritative recap metadata and opens away settings on the page only', async () => {
+    const [ph, pf] = pair(); const opened = vi.fn();
+    const bridge = new HostBridge(ph, asks, { ready: () => bridge.send({ ...grant, away: { pace: 'day', computeShare: null } }), appOpen: opened }, 100, 'page');
+    const page = await connectPage(pf);
+    expect(page.grant.away).toEqual({ pace: 'day', computeShare: null });
+    page.open('away');
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(opened).toHaveBeenCalledWith('away', undefined);
+    for (const value of [-1, 101, Number.NaN]) expect(HostMessage.safeParse({ ew: 1, ...grant, away: { pace: 'day', computeShare: value } }).success).toBe(false);
+    expect(HostMessage.parse({ ew: 1, ...grant, away: { pace: 'hour', computeShare: 0 } })).toHaveProperty('away.computeShare', 0);
+    bridge.close();
   });
   it('rejects a legacy combined grant on a new page connection', async () => {
     const [host, folder] = pair();

@@ -185,6 +185,8 @@ export const HostMessage = z.discriminatedUnion('type', [
     endpoint: z.enum(['combined', 'core', 'page']).optional(),
     mode: z.enum(['play', 'away', 'session', 'server', 'installed']).optional(),
     players: z.object({ max: z.number().int().min(1).max(10) }).optional(),
+    /** Host-owned recap metadata; null means authoritative compute share is unavailable. */
+    away: z.object({ pace: Pace, computeShare: z.number().min(0).max(100).nullable() }).optional(),
     asks: Asks,
     session: z.string().min(1),
     display: Display,
@@ -274,7 +276,7 @@ export const FolderMessage = z.discriminatedUnion('type', [
    * Reality as the corners do: Saves, the copy flow (MR1.3), the rating (PV10), or a start from a
    * scene's save. No reply; the App may decline silently where the surface does not apply.
    */
-  z.object({ ...base, type: z.literal('app.open'), what: z.enum(['saves', 'copy', 'rate', 'start-from']), detail: z.string().max(200).optional() }),
+  z.object({ ...base, type: z.literal('app.open'), what: z.enum(['saves', 'copy', 'rate', 'start-from', 'away']), detail: z.string().max(200).optional() }),
   /** The person's preferences for this folder, kept per account across Realities and devices (at most 2 MiB as JSON). */
   z.object({ ...req, type: z.literal('prefs.set'), prefs: z.unknown() }),
   z.object({ ...base, type: z.literal('error'), message: z.string().max(2000) }),

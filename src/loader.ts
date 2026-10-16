@@ -38,7 +38,7 @@ export interface Host {
   pick(accept: string[]): Promise<{ name: string; mime: string; data: string }>;
   exportFile(name: string, mime: string, data: string): Promise<unknown>;
   /** Asks the App to open one of its own surfaces over the frame (no reply). */
-  open(what: 'saves' | 'copy' | 'rate' | 'start-from', detail?: string): void;
+  open(what: 'saves' | 'copy' | 'rate' | 'start-from' | 'away', detail?: string): void;
   /** The person's preferences for this folder, kept per account. */
   prefs(prefs: unknown): Promise<unknown>;
   error(message: string): void;
