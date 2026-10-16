@@ -10,7 +10,7 @@ The host contract's message vocabulary (the asks of the files page Section 5) an
 
 ## The record it answers to
 
-The files page Sections 3 to 6; the engines matrix Sections 2 and 4; MR2.1, MR3.1, MR5.1, MR5.3. The authoritative repository record is indexed in the [Build V2 cycle](../command-center/operations/founder-product-development/cycles/2026-10-13-build-v2/record/INDEX.md). Since the operator's decision of 2026-10-15, the published pages and canvases are its view. Changes are made in that cycle record first, on review branches; where this repository and the record differ, the record holds.
+The files page Sections 3 to 6; the engines matrix Sections 2 and 4; MR2.1, MR3.1, MR5.1, MR5.3. The authoritative repository record is indexed in the [product coverage index](../command-center/docs/product/coverage.md). Since the operator's decision of 2026-10-15, the published pages and canvases are its view. Changes are made in those permanent product files first, on review branches; where this repository and the record differ, the record holds.
 
 ## What it depends on
 
