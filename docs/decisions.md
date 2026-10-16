@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Verify measured sampled-turn observations against authored inputs
+
+**Decision.** Add strict dependency and turn observations with authored input digests, counter/tick/state continuity and ordered distinct call spans. Keep unavailable/failed outcomes and reject arbitrary clean/count flags.
+
+**Alternatives.** Treating language call count as turn count would credit unperformed turns. Trusting a generic completed count would omit source and sequence evidence.
+
+**Rationale.** Source3a87b4bdfe requires actual first-party core/turn execution plus independent consumer correlation to admitted call receipts. Structural validation is not semantic certification of arbitrary entry code.
+
 ## 2026-10-16: Declare authored exact-save sampling without manufacturing inputs
 
 **Decision.** Add an optional actual-entry sampling module/corpus declaration and a cloned saved input contract with unique authored input identities. Keep the requested count separate from the number of supplied inputs and expose no model/save authority in this data helper.
