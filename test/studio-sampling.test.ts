@@ -22,3 +22,11 @@ it('binds read-only question observations without treating them as completed tur
  for(const bad of [{...question,successfulReads:0},{...question,callTo:0},{...question,id:'other'}])expect(()=>checkedStudioSampling({...observation,agentQuestions:[bad]},20,[],[{id:'why',inputSha256:'a'.repeat(64)}])).toThrow();
  expect(()=>studioSamplingAgentQuestions({...corpus,setup:{agentQuestions:[...corpus.setup.agentQuestions,...corpus.setup.agentQuestions]}})).toThrow();
 });
+
+
+it('retains route race winners without promoting late replies or counting authored turns',()=>{
+ const route={id:'look',inputSha256:'a'.repeat(64),callFrom:1,callTo:2,state:'completed',winner:'reply',decision:'turn'},authored=[{id:'look',inputSha256:'a'.repeat(64)}];
+ expect(checkedStudioSampling({state:'unavailable',detail:'Routing only.',agentRoutes:[route]},20,authored).turns).toBeUndefined();
+ expect(checkedStudioSampling({state:'unavailable',detail:'Expired routing.',agentRoutes:[{...route,state:'unavailable',winner:'deadline',decision:null}]},20,authored).agentRoutes![0]!.winner).toBe('deadline');
+ for(const bad of [{...route,winner:'deadline'},{...route,id:'wrong'},{...route,callTo:0},{...route,winner:'refused',decision:null}])expect(()=>checkedStudioSampling({state:'unavailable',detail:'Bad route.',agentRoutes:[bad]},20,authored)).toThrow();
+});

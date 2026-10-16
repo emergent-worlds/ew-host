@@ -27,7 +27,10 @@ export function studioSamplingAgentQuestions(corpus:StudioSamplingCorpus):z.infe
 export const StudioSamplingAgentObservation = z.object({id:z.string(),inputSha256:Hash,callFrom:Count.refine(n=>n>0).nullable(),callTo:Count.refine(n=>n>0).nullable(),state:z.enum(['completed','failed','unavailable']),readCalls:Count,successfulReads:Count}).strict().superRefine((value,ctx)=>{
  if(value.successfulReads>value.readCalls||(value.callFrom===null)!==(value.callTo===null)||value.callFrom!==null&&value.callTo!<value.callFrom||value.state==='completed'&&(!value.successfulReads||value.successfulReads!==value.readCalls||value.callFrom===null))ctx.addIssue({code:z.ZodIssueCode.custom,message:'agent question observations require actual read work and a coherent call span'});
 });
-export const StudioSamplingObservation = z.object({ state: z.enum(['unavailable', 'failed']), detail: z.string().min(1).max(500), turns: z.array(StudioSamplingTurn).optional(), descriptions: StudioSamplingDescriptionInventory.optional(), templates: StudioSamplingDescriptionInventory.optional(), agentQuestions:z.array(StudioSamplingAgentObservation).optional() }).strict();
+export const StudioSamplingRouteObservation = z.object({id:z.string(),inputSha256:Hash,callFrom:Count.refine(n=>n>0).nullable(),callTo:Count.refine(n=>n>0).nullable(),state:z.enum(['completed','failed','unavailable']),winner:z.enum(['reply','deadline','refused','cancelled']),decision:z.enum(['turn','change']).nullable()}).strict().superRefine((value,ctx)=>{
+ if((value.callFrom===null)!==(value.callTo===null)||value.callFrom!==null&&value.callTo!<value.callFrom||value.state==='completed'&&(value.winner!=='reply'||value.decision===null||value.callFrom===null)||value.winner!=='reply'&&value.decision!==null)ctx.addIssue({code:z.ZodIssueCode.custom,message:'route observations retain the actual winner and coherent call span'});
+});
+export const StudioSamplingObservation = z.object({ state: z.enum(['unavailable', 'failed']), detail: z.string().min(1).max(500), turns: z.array(StudioSamplingTurn).optional(), descriptions: StudioSamplingDescriptionInventory.optional(), templates: StudioSamplingDescriptionInventory.optional(), agentQuestions:z.array(StudioSamplingAgentObservation).optional(),agentRoutes:z.array(StudioSamplingRouteObservation).optional() }).strict();
 export type StudioSamplingObservation = z.infer<typeof StudioSamplingObservation>;
 export interface StudioSamplingInput extends StudioSavedInput { readonly diagnostic?: z.infer<typeof StudioSamplingDiagnostic>; readonly corpus: StudioSamplingCorpus; readonly requestedTurns: number; readonly resolved?: readonly z.infer<typeof StudioSamplingDependency>[] }
 /** The caller verifies the corpus's immutable path/hash before selecting these cloned data. */
@@ -45,8 +48,10 @@ export function checkedStudioSampling(value: unknown, requestedTurns: number, au
   const turn = turns[index]!, expected = authored[index]!, prior = turns[index - 1];
   if (turn.id !== expected.id || turn.inputSha256 !== expected.inputSha256 || turn.afterTick < turn.beforeTick || turn.afterTurns !== turn.beforeTurns + 1 || turn.callTo < turn.callFrom || prior && (turn.beforeTick !== prior.afterTick || turn.beforeHash !== prior.afterHash || turn.beforeTurns !== prior.afterTurns || turn.callFrom <= prior.callTo)) throw new Error('sampled turns do not match actual ordered observations');
  }
+ const routes=observation.agentRoutes??[];if(routes.length>Math.min(requestedTurns,authored.length))throw new Error('routing exceeds the authored turn prefix');
+ let routeEnd=0;for(let index=0;index<routes.length;index++){const route=routes[index]!,expected=authored[index]!;if(route.id!==expected.id||route.inputSha256!==expected.inputSha256||route.callFrom!==null&&route.callFrom<=routeEnd)throw new Error('routing does not match the ordered authored inputs');if(route.callTo!==null)routeEnd=route.callTo;}
  const questions=observation.agentQuestions??[];if(questions.length>authoredQuestions.length)throw new Error('agent questions exceed the authored prefix');
- let priorEnd=turns.at(-1)?.callTo??0;
+ let priorEnd=Math.max(turns.at(-1)?.callTo??0,routeEnd);
  for(let index=0;index<questions.length;index++){const question=questions[index]!,expected=authoredQuestions[index]!;if(question.id!==expected.id||question.inputSha256!==expected.inputSha256||question.callFrom!==null&&question.callFrom<=priorEnd)throw new Error('agent questions do not match the ordered authored observations');if(question.callTo!==null)priorEnd=question.callTo;}
  const used = new Set<number>();
  for (const inventory of [observation.descriptions, observation.templates]) {

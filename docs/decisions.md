@@ -1,5 +1,14 @@
 # Decisions: ew-host
 
+## 2026-10-16: Retain actual sampled routing race winners
+
+**Decision.** Add optional ordered authored agentRoutes observations with explicit race winner and nullable decision/span, separately from measured turns and SYSTEM questions.
+
+**Alternatives.** Treat eventual successful model settlement as timely routing or count a fallback turn as a successful route.
+
+**Rationale.** Source3857f19c1c requires genuine deadline-aware evidence while preserving older unavailable data and original turn accounting. This schema adds no execution authority.
+
+
 ## 2026-10-16: Keep read-only agent questions separate from sampled play turns
 
 **Decision.** Add optional diagnostic identity/time and strict authored question observations to the existing sampling contract. Bind question identities/digests and ordered call spans independently from counted play turns.

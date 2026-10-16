@@ -97,3 +97,6 @@ Verified Studio own-tree metadata, source47a0604d2b: optional path/hash/size inv
 
 
 Read-only agent sampling source c1053d8350 adds optional admitted owner/timestamp input and separately authored agent-question observations. Strict nullable call spans and read counts do not establish play turns. The shared checker binds questions to the authored ordered input prefix and refuses malformed completion or overlapping work. Older callers remain valid without these fields; the actual AgentSession/call accounting producer remains independent.
+
+
+Source3857f19c1c adds optional agentRoutes sampling observations bound to authored turn identities/digests, ordered actual call spans and explicit reply/deadline/refused/cancelled winners. A nonreply winner cannot carry a decision or completion; missing older observations grant no route or turn credit. These data do not expose a timer or model port. Actual runtime and parent receipt correlation remain consumer responsibilities.
