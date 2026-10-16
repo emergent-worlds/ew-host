@@ -39,6 +39,18 @@ async function resume(f: ReturnType<typeof fixture>, seq: number, snapshot = fal
 }
 
 describe('remote page synchronization', () => {
+  it('waits for cross-frame replay application before releasing readiness', async () => {
+    let apply!: () => void;
+    const f = fixture({ applyNotice: () => new Promise<void>(resolve => { apply = resolve; }) });
+    await start(f);
+    f.socket.close(); const ready = f.client.reconnect(); f.socket.open(); f.socket.frame(admission('next-credential'));
+    f.socket.frame({ v: 1, ch: 'port', seq: 1, body: { ew: 1, notice: 'view', data: 'personal' } });
+    f.socket.frame({ v: 1, ch: 'ctl', type: 'sync', seq: 1, mode: 'replay' });
+    f.socket.frame({ v: 1, ch: 'ctl', type: 'ready', seq: 1 });
+    await flush(); expect(f.client.lastSeq).toBe(0); expect(f.client.state).toBe('syncing');
+    expect(f.socket.sent.some(frame => frame.type === 'ack')).toBe(false);
+    apply(); await ready; expect(f.client.lastSeq).toBe(1); expect(f.client.state).toBe('ready');
+  });
   it('awaits the snapshot installer, exact ack and latest ready boundary before calls or input', async () => {
     let release!: () => void;
     const install = vi.fn(() => new Promise<void>(resolve => { release = resolve; }));

@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-16: Await page application across the remote frame boundary
+
+**Decision.** Add optional asynchronous applyNotice to remotePort and await it before sequence advancement, acknowledgement or queued readiness. Abort on connection replacement, matching snapshot installation.
+
+**Alternatives.** Count a MessagePort enqueue as application; delay only replacement snapshots.
+
+**Rationale.** Replay can cross the iframe boundary after the socket has received ready. The canonical files clarification 991ff72fd6 requires actual application before release. Existing synchronous consumers remain compatible. The delayed-replay regression and all 113 host tests pass with typecheck and build.
+
 ## 2026-10-16: One canonical installed build encoding for check and install
 
 **Decision.** Export strict build-list/envelope schemas and canonical helpers from the host root. The versioned bytes bind prefix and exact executable alongside immutable identity and complete sorted files. Share the native installer's exact vector and emit structural JSON schemas.

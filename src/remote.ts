@@ -11,6 +11,8 @@ export interface RemotePortOptions {
   token: string;
   /** Installs an authoritative replacement projection before its exact boundary is acknowledged. */
   installSnapshot(notices: readonly PortNotice[], seq: number, signal: AbortSignal): void | Promise<void>;
+  /** A cross-frame page confirms application before the sequence is acknowledged. */
+  applyNotice?(notice: PortNotice, seq: number, signal: AbortSignal): void | Promise<void>;
   /** A native adapter supplies plain direct sockets; the default web transport uses WSS or local fixtures. */
   socket?: (url: string) => SocketLike;
   signal?: AbortSignal;
@@ -171,6 +173,16 @@ export function remotePort(url: string, options: RemotePortOptions): RemotePort 
       if (!resumeAttempt && !snapshot) throw new Error('remote notices preceded the initial snapshot');
       if (frame.seq <= applied) { if (phase === 'ready') acknowledge(applied); return; }
       if (frame.seq !== applied + 1) { disconnected(); return; }
+      if (options.applyNotice) {
+        const signal = attemptAbort.signal;
+        let cancel!: () => void;
+        const cancelled = new Promise<never>((_resolve, reject) => { cancel = () => reject(new Error('the notice attempt was replaced')); signal.addEventListener('abort', cancel, { once: true }); });
+        try {
+          if (signal.aborted) cancel();
+          await Promise.race([options.applyNotice(frame.body, frame.seq, signal), cancelled]);
+        } finally { signal.removeEventListener('abort', cancel); }
+        if (atGeneration !== generation) return;
+      }
       notify(frame.body); applied = frame.seq;
       if (phase === 'ready') acknowledge(applied);
       return;
