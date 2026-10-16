@@ -21,3 +21,4 @@ export type { RemotePort, RemotePortOptions, RemoteState, RemoteControl, RemoteR
 export { HostRefusal, HostRefusalError, RefusalDetail } from './refusal.js';
 
 export { BuildFile, BuildList, SignedBuild, canonicalBuildList, parseBuildList, portablePath } from './builds.js';
+export { serverAddress } from './address.js';

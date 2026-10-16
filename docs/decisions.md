@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-16: Share pure advertised-address normalization
+
+**Decision.** Export one browser-compatible hostname/IP/port normalizer for machine configuration and API registry lookup, with no networking.
+
+**Alternatives.** Normalize separately in each consumer, accept arbitrary URLs, or probe a caller-supplied destination.
+
+**Rationale.** E10 registration and joining must identify the same canonical address. Rejecting ambiguous numeric rewrites and URL components prevents parsing from silently changing the destination. The registry, current fence and persisted admission rules remain authoritative.
+
 ## 2026-10-16: Declare pure save inspection separately from a running engine
 
 **Decision.** Add optional saveInspection module/input paths and a strict semantic result schema. Keep declared saved input bytes separate from the full path inventory. Consumers isolate the module without host authority and require update preservation before a core starts.
