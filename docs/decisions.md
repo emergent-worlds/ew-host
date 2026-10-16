@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Carry explicit host refusal data without deriving policy
+
+**Decision.** Privileged reply envelopes accept optional code and JSON-object detail. Bridge and loader preserve these explicit fields and reconstruct HostRefusal, with HostRefusalError as an alias. Text-only errors keep their existing behavior. Invalid detail is omitted without inventing a replacement policy value.
+
+**Alternatives.** Infer model policy from prose, collapse every refusal to text, or default absent needed data to false.
+
+**Rationale.** E5 needs the consumer to distinguish explicitly optional work from needed or unknown work. The permanent files record gained the generic structure before code in `b3fd2ad46e`. The model-route host owns compute-out interpretation; the transport preserves it without making a model decision or granting guest access.
+
 ## 2026-10-15: Preserve page requests through explicit remote synchronization
 
 **Decision.** remotePort returns the existing PortClient surface with snapshot installation, current readiness, input/agent/control access, and explicit reconnect. It retains pending opaque request identities across socket replacement, while separately correlating numeric port ids. It refreshes at 55 minutes and preserves one fixed five-minute disconnected window. The App chooses when to retry after connectivity returns; no immediate loop or unrecorded backoff is introduced.

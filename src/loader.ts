@@ -1,5 +1,6 @@
 export { remotePort } from './remote.js';
 export type { RemotePort, RemotePortOptions } from './remote.js';
+export { HostRefusal, HostRefusalError } from './refusal.js';
 
 /**
  * The folder's side of the contract. A folder's core imports this, calls
@@ -11,6 +12,7 @@ export type { RemotePort, RemotePortOptions } from './remote.js';
 import { FolderMessage, HostMessage, PROTOCOL_VERSION, type ModelRequestIn, type SaveReason, type SavedFile } from './protocol.js';
 import type { Transport } from './bridge.js';
 import { endpointReceives, endpointSends, type EndpointFamily } from './endpoints.js';
+import { refusalError, refusalFields } from './refusal.js';
 
 type Grant = Extract<HostMessage, { type: 'grant' }>;
 type HostRequestType = 'pause' | 'resume' | 'quit' | 'state.read' | 'state.query' | 'state.explain' | 'change.forecast' | 'change.propose' | 'change.apply' | 'change.undo' | 'layout.set' | 'layout.reset';
@@ -204,7 +206,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
           const p = pending.get(m.reply_to);
           if (!p) return;
           pending.delete(m.reply_to);
-          return m.ok ? p.resolve(m.result) : p.reject(new Error(m.error ?? 'the host refused'));
+          return m.ok ? p.resolve(m.result) : p.reject(refusalError(m, 'the host refused'));
         }
         if ('id' in m) {
           const h = handlers.get(m.type);
@@ -213,7 +215,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
             const result = await h(m as never);
             if (!closed) transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: true, result });
           } catch (e) {
-            if (!closed) transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: false, error: (e as Error).message });
+            if (!closed) transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: false, ...refusalFields(e) });
           }
           return;
         }

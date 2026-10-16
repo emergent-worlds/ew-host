@@ -12,6 +12,7 @@
  */
 import { z } from 'zod';
 import { Asks, FolderRef } from './manifest.js';
+import { RefusalDetail } from './refusal.js';
 
 export const PROTOCOL_VERSION = 1 as const;
 
@@ -234,7 +235,7 @@ export const HostMessage = z.discriminatedUnion('type', [
   /** A paragraph of a streamed model reply, released as it passes the classifier, before the reply closes the call. */
   z.object({ ...base, type: z.literal('model.part'), reply_to: z.number().int(), index: z.number().int().nonnegative(), text: z.string() }),
   /** Answers to the folder's requests. */
-  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional() }),
+  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional(), code: z.string().min(1).optional(), detail: RefusalDetail.optional() }),
 ]);
 export type HostMessage = z.infer<typeof HostMessage>;
 /** What a host writes before the schema fills defaults. */
@@ -281,7 +282,7 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('prefs.set'), prefs: z.unknown() }),
   z.object({ ...base, type: z.literal('error'), message: z.string().max(2000) }),
   /** Answers to the host's requests (pause, resume, state.*, change.*, layout.*). */
-  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional() }),
+  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional(), code: z.string().min(1).optional(), detail: RefusalDetail.optional() }),
 ]);
 export type FolderMessage = z.infer<typeof FolderMessage>;
 

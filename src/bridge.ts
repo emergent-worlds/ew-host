@@ -7,6 +7,7 @@
  */
 import { FolderMessage, HostMessage, PROTOCOL_VERSION, deliverable, permitted, type HostMessageIn, type SaveReason } from './protocol.js';
 import type { Asks } from './manifest.js';
+import { refusalError, refusalFields } from './refusal.js';
 import { endpointReceives, endpointSends, type EndpointFamily } from './endpoints.js';
 
 /** The minimum a transport offers. */
@@ -169,9 +170,9 @@ export class HostBridge {
     this.transport.close();
   }
 
-  private reply(replyTo: number, ok: boolean, result?: unknown, error?: string): void {
+  private reply(replyTo: number, ok: boolean, result?: unknown, error?: unknown): void {
     if (this.closed) return;
-    this.transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: replyTo, ok, ...(ok ? { result } : { error }) });
+    this.transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: replyTo, ok, ...(ok ? { result } : refusalFields(error)) });
   }
 
   private async receive(raw: unknown): Promise<void> {
@@ -195,7 +196,7 @@ export class HostBridge {
       try {
         this.reply(id, true, await work());
       } catch (e) {
-        this.reply(id, false, undefined, (e as Error).message);
+        this.reply(id, false, undefined, e);
       }
     };
     switch (m.type) {
@@ -220,7 +221,7 @@ export class HostBridge {
           this.reply(m.id, true, result);
           for (const w of waiters) w.resolve(result);
         } catch (e) {
-          this.reply(m.id, false, undefined, (e as Error).message);
+          this.reply(m.id, false, undefined, e);
           for (const w of waiters) w.reject(e as Error);
         } finally {
           this.savingWaiters = this.savingWaiters.filter((w) => !waiters.includes(w));
@@ -235,7 +236,7 @@ export class HostBridge {
         try {
           this.reply(m.id, true, await this.handlers.modelCall(m, part, controller.signal));
         } catch (e) {
-          this.reply(m.id, false, undefined, controller.signal.aborted ? 'cancelled' : (e as Error).message);
+          this.reply(m.id, false, undefined, controller.signal.aborted ? 'cancelled' : e);
         } finally {
           this.cancels.delete(m.id);
         }
@@ -265,7 +266,7 @@ export class HostBridge {
         const p = this.pending.get(m.reply_to);
         if (!p) return;
         this.pending.delete(m.reply_to);
-        return m.ok ? p.resolve(m.result) : p.reject(new Error(m.error ?? 'the folder refused'));
+        return m.ok ? p.resolve(m.result) : p.reject(refusalError(m, 'the folder refused'));
       }
     }
   }
