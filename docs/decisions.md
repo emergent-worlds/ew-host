@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-16: One canonical installed build encoding for check and install
+
+**Decision.** Export strict build-list/envelope schemas and canonical helpers from the host root. The versioned bytes bind prefix and exact executable alongside immutable identity and complete sorted files. Share the native installer's exact vector and emit structural JSON schemas.
+
+**Alternatives.** Keep independent signing and installing encoders, or let the signing callback choose unsigned prefix/entry metadata.
+
+**Rationale.** The permanent files record already settles these exact bytes before implementation. A shared package prevents SDK check evidence and native installation from signing different executable authority. Runtime helpers enforce cross-field constraints that JSON Schema alone does not represent. Cryptographic verification remains native and uses the App-controlled key.
+
 ## 2026-10-15: Carry explicit host refusal data without deriving policy
 
 **Decision.** Privileged reply envelopes accept optional code and JSON-object detail. Bridge and loader preserve these explicit fields and reconstruct HostRefusal, with HostRefusalError as an alias. Text-only errors keep their existing behavior. Invalid detail is omitted without inventing a replacement policy value.

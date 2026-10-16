@@ -1,0 +1,1 @@
+{"domain":"ew.build-files.v1","folder":"folder-1","version":"version-2","target":"linux-x64","prefix":"build/linux","entry":"build/linux/game","files":[{"path":"build/linux/game","sha256":"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08","size":4,"executable":true}]}
