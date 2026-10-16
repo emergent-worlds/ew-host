@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Explicit final-state scenario expectations
+
+**Decision**: Add optional advertised tick/variable equality predicates and strict exact-recipe assertion evidence, following sourceba04bcb66c.
+
+**Alternatives**: Infer expectations, accept arbitrary expressions, or treat completed tools as semantic success.
+
+**Rationale**: Authored scalar checks can be evaluated against actual final state without granting additional host capabilities. Empty and historical runs retain unperformed evidence.
+
 ## 2026-10-16: Correlate actual sampling coverage without content retention
 
 **Decision.** Standardize actual prompt-word encoding and optional digest-only description inventories with unique source identities and distinct ordered classifier sequences. Leave counts and verdict correlation to the retained parent authority.

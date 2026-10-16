@@ -13,3 +13,20 @@ it('retains counted recipe outcomes but refuses skipped, changed, invented or cl
   for (const changed of [{ ...result, turns: 20 }, { ...result, classifier: 'clean' }, { ...result, steps: [] }, { ...result, finalTick: 11 }, { ...result, steps: [{ ...result.steps[0], action: { ...action, ticks: 2 } }] }]) expect(() => checkedStudioScenario(changed, [action])).toThrow();
   expect(checkedStudioScenario({ ...result, state: 'unavailable', detail: 'Pending model work.', steps: [{ ...result.steps[0], state: 'unavailable' }] }, [action]).state).toBe('unavailable');
 });
+it('requires explicitly advertised authored assertions and exact final-state outcomes', () => {
+  const expectation = { kind: 'tick_equals' as const, expected: 10 };
+  const assertions = { state: 'pass', checks: [{ index: 0, expectation, state: 'pass', found: true, actual: 10, detail: 'The final tick is ten.' }] };
+  expect(checkedStudioScenario({ ...result, assertions }, [action], [expectation]).assertions?.state).toBe('pass');
+  for (const changed of [{ ...result, assertions: { state: 'pass', checks: [] } }, { ...result, assertions: { ...assertions, checks: [{ ...assertions.checks[0], actual: 11 }] } }, result]) expect(() => checkedStudioScenario(changed, [action], [expectation])).toThrow();
+  expect(() => checkedStudioScenario({ ...result, assertions }, [action])).toThrow();
+  const input = { snapshot: { versionId: 'saved', treeSha256: 'a'.repeat(64) }, manifest: {}, paths: [], files: new Map(), actions: [action], expectations: [expectation] };
+  expect(() => studioScenarioInput(declaration, input)).toThrow('expectation');
+  expect(studioScenarioInput({ ...declaration, expectations: ['tick_equals'] }, input).expectations).toEqual([expectation]);
+});
+it('distinguishes missing variables from null and refuses partial-recipe assertion passes', () => {
+  const expectation = { kind: 'variable_equals' as const, id: 'missing', expected: null };
+  const check = { index: 0, expectation, state: 'fail', found: false, actual: null, detail: 'This variable is missing.' };
+  expect(checkedStudioScenario({ ...result, state: 'failed', assertions: { state: 'fail', checks: [check] } }, [action], [expectation]).assertions?.state).toBe('fail');
+  expect(() => checkedStudioScenario({ ...result, assertions: { state: 'pass', checks: [{ ...check, state: 'pass' }] } }, [action], [expectation])).toThrow();
+  expect(() => checkedStudioScenario({ ...result, state: 'unavailable', steps: [{ ...result.steps[0], state: 'unavailable' }], assertions: { state: 'pass', checks: [{ ...check, state: 'pass', found: true }] } }, [action], [expectation])).toThrow();
+});

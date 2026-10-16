@@ -76,6 +76,16 @@
                 ]
               },
               "minItems": 1
+            },
+            "expectations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "tick_equals",
+                  "variable_equals"
+                ]
+              }
             }
           },
           "required": [
