@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-16: Declare pure Studio validation without an overall pass
+
+**Decision.** Expose optional exact-byte validation declarations and strict finding/run results. Clone only the declared own reads, retain the caller's exact snapshot and validate actual run counters against its request.
+
+**Alternatives.** A save-format inspection does not validate the graph or exercise ticks. Client-reported passes and lowered run counts cannot establish PV54. A checker declaration alone grants no execution or authority.
+
+**Rationale.** S8.4 calls the engine and pack's own checks and requires an actual365-tick run. The caller still verifies immutable bytes, selects the actual entry validator and owns isolation/cancellation. Individual executed evidence stays distinct from unperformed classifier, behavioral and scenario checks and cannot enable handoff by itself.
+
 ## 2026-10-16: Share pure advertised-address normalization
 
 **Decision.** Export one browser-compatible hostname/IP/port normalizer for machine configuration and API registry lookup, with no networking.

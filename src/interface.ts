@@ -14,6 +14,7 @@
 import { z } from 'zod';
 import semver from 'semver';
 import { JobName } from './manifest.js';
+import { StudioValidationDeclaration } from './studio-validation.js';
 
 /** The calls an engine answers (the engines matrix, Section 2.2). Pause and resume are the host's, not the engine's. */
 export const EngineCall = z.enum(['load', 'save', 'advance', 'input', 'read', 'query', 'explain', 'forecast', 'change']);
@@ -64,6 +65,7 @@ export const EngineInterface = z.object({
   state: z.array(z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)).default([]),
   /** A pure compatibility inspection, isolated before a host starts the core. */
   saveInspection: SaveInspectionDeclaration.optional(),
+  studioValidation: StudioValidationDeclaration.optional(),
   /** The save format version this engine writes. */
   format: z.number().int().positive().default(1),
 });
@@ -80,6 +82,7 @@ export const Slot = z.enum(['dashboard-line', 'variable-course', 'portrait', 'ic
 export type Slot = z.infer<typeof Slot>;
 
 export const FolderContract = z.object({
+  studioValidation: StudioValidationDeclaration.optional(),
   needs: z
     .object({
       calls: z.array(EngineCall).default([]),
