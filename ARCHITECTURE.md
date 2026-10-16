@@ -52,3 +52,5 @@ E5 refusal seam: privileged reply envelopes now retain optional code and JSON-ob
 The root additionally exports E12/E16's installed build schemas and exact canonical helpers (`src/builds.ts`, [encoding](docs/builds.md)). SDK check signing and the App installer use the same versioned prefix/entry/file binding. Native signature verification and real artifact acceptance remain consumer obligations.
 
 Remote page application, 2026-10-16: optional applyNotice waits for a cross-frame page to apply a live or replayed notice before advancing the applied sequence. Cancellation follows the connection generation. Without it, existing synchronous subscribers retain their behavior. All 113 tests, typecheck and build pass, including a replay whose delayed page application holds readiness.
+
+Reconnect baseline correction: a connection lost before its initial snapshot installation completes now closes and requires a fresh join. It cannot resume from sequence zero without a page baseline. A later interrupted replacement retains the previous valid baseline. All 114 tests, typecheck and build pass.

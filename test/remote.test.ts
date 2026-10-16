@@ -39,6 +39,16 @@ async function resume(f: ReturnType<typeof fixture>, seq: number, snapshot = fal
 }
 
 describe('remote page synchronization', () => {
+  it('requires a fresh join after disconnect before any initial snapshot was installed', async () => {
+    let release!: () => void;
+    const f = fixture({ installSnapshot: () => new Promise<void>(resolve => { release = resolve; }) });
+    f.socket.open(); f.socket.frame(admission());
+    f.socket.frame({ v: 1, ch: 'ctl', type: 'snapshot', seq: 0, notices: [] });
+    await flush(); f.socket.close(); release(); await flush();
+    expect(f.client.state).toBe('closed'); expect(f.client.lastSeq).toBe(0);
+    await expect(f.client.reconnect()).rejects.toThrow();
+    expect(f.sockets).toHaveLength(1);
+  });
   it('waits for cross-frame replay application before releasing readiness', async () => {
     let apply!: () => void;
     const f = fixture({ applyNotice: () => new Promise<void>(resolve => { apply = resolve; }) });
@@ -95,12 +105,13 @@ describe('remote page synchronization', () => {
     failed.socket.open(); failed.socket.frame(admission()); failed.socket.frame({ v: 1, ch: 'ctl', type: 'snapshot', seq: 0, notices: [] }); await flush();
     expect(failed.client.state).toBe('closed'); expect(failed.socket.sent.filter(frame => frame.type === 'ack')).toEqual([]);
     let release!: () => void; let firstSignal!: AbortSignal; let n = 0; let page = 0;
-    const f = fixture({ installSnapshot: async (_notices, seq, signal) => { if (++n === 1) { firstSignal = signal; await new Promise<void>(resolve => { release = resolve; }); } if (!signal.aborted) page = seq; } });
+    const f = fixture({ installSnapshot: async (_notices, seq, signal) => { if (++n === 2) { firstSignal = signal; await new Promise<void>(resolve => { release = resolve; }); } if (!signal.aborted) page = seq; } });
+    await start(f); f.socket.close(); void f.client.reconnect().catch(() => undefined);
     f.socket.open(); f.socket.frame(admission()); f.socket.frame({ v: 1, ch: 'ctl', type: 'snapshot', seq: 1, notices: [] }); await flush();
     const old = f.socket; old.close(); expect(firstSignal.aborted).toBe(true);
     const ready = f.client.reconnect(); f.socket.open(); f.socket.frame(admission('synthetic-resume-2'));
     f.socket.frame({ v: 1, ch: 'ctl', type: 'snapshot', seq: 2, notices: [] }); f.socket.frame({ v: 1, ch: 'ctl', type: 'sync', seq: 2, mode: 'snapshot' });
-    await flush(); expect(n).toBe(2);
+    await flush(); expect(n).toBe(3);
     f.socket.frame({ v: 1, ch: 'ctl', type: 'ready', seq: 2 }); await ready; expect(f.client.lastSeq).toBe(2); expect(page).toBe(2);
     release(); await flush(); expect(page).toBe(2); expect(f.client.lastSeq).toBe(2);
   });

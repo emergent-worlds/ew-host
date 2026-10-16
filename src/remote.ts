@@ -70,6 +70,7 @@ export function remotePort(url: string, options: RemotePortOptions): RemotePort 
   let expiry: ReturnType<typeof setTimeout> | undefined;
   let disconnectedAt: number | undefined;
   let snapshot = false; let synchronized: number | undefined; let acknowledged = false;
+  let baselineInstalled = false;
   let admittedThisAttempt = false; let resumeAttempt = false;
   const operations = new Map<string, Operation>();
   const listeners = new Map<string, Set<(data: unknown) => void>>();
@@ -97,7 +98,7 @@ export function remotePort(url: string, options: RemotePortOptions): RemotePort 
   }
   function disconnected() {
     if (phase === 'closed' || phase === 'disconnected') return;
-    if (!admitted) { finish(new Error('remote admission did not complete')); return; }
+    if (!admitted || !baselineInstalled) { finish(new Error('remote admission did not install its initial page')); return; }
     generation++; detach(); attemptAbort.abort(); socket?.close(); socket = undefined;
     clearTimeout(refresh);
     if (cycle.settled) cycle = deferred();
@@ -148,7 +149,7 @@ export function remotePort(url: string, options: RemotePortOptions): RemotePort 
           await Promise.race([options.installSnapshot(frame.notices, frame.seq, signal), cancelled]);
         } finally { signal.removeEventListener('abort', cancel); }
         if (atGeneration !== generation) return;
-        applied = frame.seq; snapshot = true; return;
+        applied = frame.seq; snapshot = true; baselineInstalled = true; return;
       }
       if (frame.type === 'sync') {
         if (synchronized !== undefined || frame.seq !== applied || (frame.mode === 'snapshot') !== snapshot || (!resumeAttempt && !snapshot)) throw new Error('invalid remote synchronization boundary');
