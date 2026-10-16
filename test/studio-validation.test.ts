@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { EngineInterface, FolderContract } from '../src/interface.js';
 import { checkedStudioValidation, studioValidationInput, StudioValidationDeclaration, StudioValidationResult } from '../src/studio-validation.js';
@@ -29,4 +30,11 @@ it('refuses lowered requested counts, invented ticks, malformed or duplicated ev
 it('retains real partial progress or no run without promoting either to a pass', () => {
   expect(checkedStudioValidation({ ...result, run: { ...result.run, state: 'fail', completedTicks: 3, finalTick: 15 } }, 365).run.state).toBe('fail');
   expect(checkedStudioValidation({ ...result, run: { ...result.run, state: 'unavailable', completedTicks: 0, initialTick: null, finalTick: null } }, 365).run.state).toBe('unavailable');
+});
+
+it('preserves verified tree identities without granting unselected bytes and refuses tampered selected metadata', () => {
+ const bytes = new TextEncoder().encode('saved state'), other = new TextEncoder().encode('unselected asset'), digest = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+ const tree = [{path:'state/engine.json',sha256:digest(bytes),size:bytes.length},{path:'private.bin',sha256:digest(other),size:other.length}], source={snapshot:{versionId:'saved',treeSha256:'a'.repeat(64)},manifest:{},paths:tree.map(file=>file.path),files:new Map([['state/engine.json',bytes],['private.bin',other]]),tree,requestedTicks:365};
+ const selected=studioValidationInput(declaration,source);expect(selected.tree).toEqual(tree);expect([...selected.files.keys()]).toEqual(['state/engine.json']);expect(selected.tree).not.toBe(tree);expect(selected.tree![0]).not.toBe(tree[0]);
+ for(const invalid of [[tree[0]!], [tree[0]!,tree[0]!], [{...tree[0]!,sha256:'0'.repeat(64)},tree[1]!],[{...tree[0]!,size:bytes.length+1},tree[1]!],[tree[0]!,{...tree[1]!,path:'../private.bin'}]])expect(()=>studioValidationInput(declaration,{...source,tree:invalid})).toThrow();
 });

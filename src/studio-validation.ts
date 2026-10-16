@@ -1,6 +1,7 @@
 /** S8.4/PV54: declared pure exact-byte validation, distinct from an overall Studio pass. */
 import { z } from 'zod';
 import { portablePath } from './builds.js';
+import { sha256 } from './sha256.js';
 const safePath = (path: string) => portablePath(path) && !/[%#]/.test(path);
 const OwnRead = z.string().min(1).max(512).refine(path => safePath(path.endsWith('/') ? path.slice(0, -1) : path) && path.split('/')[0]!.toLowerCase() !== 'uses', 'an exact own-file path or trailing-slash prefix');
 export const StudioValidationDeclaration = z.object({
@@ -10,10 +11,12 @@ export const StudioValidationDeclaration = z.object({
 export type StudioValidationDeclaration = z.infer<typeof StudioValidationDeclaration>;
 const Count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const StudioSnapshot = z.object({ versionId: z.string().min(1), treeSha256: z.string().regex(/^[0-9a-f]{64}$/) }).strict();
+export const StudioTreeFile = z.object({ path: z.string().refine(safePath), sha256: z.string().regex(/^[0-9a-f]{64}$/), size: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) }).strict();
 export interface StudioSavedInput {
   readonly snapshot: z.infer<typeof StudioSnapshot>;
   readonly manifest: unknown;
   readonly paths: readonly string[];
+  readonly tree?: readonly z.infer<typeof StudioTreeFile>[];
   readonly files: ReadonlyMap<string, Uint8Array>;
 }
 export interface StudioValidationInput extends StudioSavedInput { readonly requestedTicks: number }
@@ -38,13 +41,17 @@ export type StudioValidator = (input: StudioValidationInput) => StudioValidation
 export function studioSavedInput(declaration: StudioValidationDeclaration, input: StudioSavedInput): StudioSavedInput {
   const declared = StudioValidationDeclaration.parse(declaration), snapshot = StudioSnapshot.parse(input.snapshot);
   if (new Set(input.paths.map(path => path.toLowerCase())).size !== input.paths.length || input.paths.some(path => !safePath(path) || path.split('/')[0]!.toLowerCase() === 'uses')) throw new Error('invalid Studio own-file inventory');
+  const tree = input.tree?.map(file => StudioTreeFile.parse(file));
+  if (tree && (tree.length !== input.paths.length || new Set(tree.map(file => file.path)).size !== tree.length || tree.some(file => !input.paths.includes(file.path)))) throw new Error('Studio tree metadata differs from the own inventory');
+  const byPath = new Map(tree?.map(file => [file.path, file]) ?? []);
   const selected = new Map<string, Uint8Array>();
   for (const path of input.paths) {
     if (!declared.reads.some(read => read.endsWith('/') ? path.startsWith(read) : path === read)) continue;
     const bytes = input.files.get(path); if (!ArrayBuffer.isView(bytes) || Object.prototype.toString.call(bytes) !== '[object Uint8Array]') throw new Error('selected Studio bytes are missing');
+    const metadata = byPath.get(path); if (tree && (!metadata || metadata.size !== bytes.byteLength || metadata.sha256 !== sha256(bytes))) throw new Error('selected Studio bytes differ from verified tree metadata');
     selected.set(path, new Uint8Array(bytes));
   }
-  return { snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected };
+  return { snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, ...(tree ? { tree } : {}) };
 }
 export function studioValidationInput(declaration: StudioValidationDeclaration, input: StudioValidationInput): StudioValidationInput {
   if (!Number.isSafeInteger(input.requestedTicks) || input.requestedTicks <= 0) throw new Error('invalid validation tick count');

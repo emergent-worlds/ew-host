@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Preserve verified own-tree identities without expanding reads
+
+**Decision**: Add optional cloned own path/hash/size metadata to Studio saved input, check selected bytes against it and preserve declared read selection.
+
+**Alternatives**: Invent hashes for unselected assets, read every own asset into the guest input, or infer full-tree save behavior from selected state only.
+
+**Rationale**: Source47a0604d2b supplies the minimal honest grant inventory for an actual headless save protocol check while keeping trusted immutable-tree derivation and older call sites explicit.
+
 ## 2026-10-16: Keep named template evidence separate from assembled requests
 
 **Decision**: Extend sampling observations with optional named template inventory using existing source/text digests and unique classifier sequence references.
