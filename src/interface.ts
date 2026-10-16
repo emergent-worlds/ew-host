@@ -30,6 +30,25 @@ export type AskPart = z.infer<typeof AskPart>;
 /** A path to an ES module inside the folder, which another folder's code imports from `/uses/<ref>/<path>` (D6). */
 const ModulePath = z.string().min(1).max(512).refine((p) => !p.startsWith('/') && !p.split('/').includes('..'), 'a path inside the folder');
 
+/** E18 inspection is an optional, pure module over explicitly selected saved bytes. */
+const InspectionPath = z.string().min(1).max(512).refine(p => !/[\\:%?#\u0000-\u001f]/.test(p) && !p.startsWith('/') && p.split('/').every(part => !!part && part !== '.' && part !== '..'), 'a relative file path without traversal');
+export const SaveInspectionDeclaration = z.object({
+  module: InspectionPath,
+  files: z.array(InspectionPath).refine(paths => new Set(paths).size === paths.length, 'inspection paths are unique'),
+}).strict();
+export type SaveInspectionDeclaration = z.infer<typeof SaveInspectionDeclaration>;
+export interface SaveInspectionInput { readonly files: ReadonlyMap<string, Uint8Array>; readonly paths: readonly string[] }
+export const SaveInspection = z.object({
+  status: z.enum(['empty', 'ready', 'update', 'refused']),
+  savedFormat: z.number().int().positive().safe().nullable(),
+  currentFormat: z.number().int().positive().safe(),
+  savedWith: z.string().min(1).max(100).optional(),
+  reason: z.string().min(1).max(500).optional(),
+}).strict().superRefine((value, ctx) => {
+  if (value.status === 'empty' && value.savedFormat !== null || value.status === 'ready' && value.savedFormat !== value.currentFormat || value.status === 'update' && (value.savedFormat === null || value.savedFormat === value.currentFormat)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'the inspection status and formats do not agree' });
+});
+export type SaveInspection = z.infer<typeof SaveInspection>;
+
 export const EngineInterface = z.object({
   calls: z.array(EngineCall).min(1),
   takes: z.array(AskPart).default([]),
@@ -43,6 +62,8 @@ export const EngineInterface = z.object({
   parts: z.record(z.string().regex(/^[a-z][a-z0-9-]{0,39}$/), ModulePath).default({}),
   /** The named parts of the documented state (FE.15), which a contract's `needs.state` names. */
   state: z.array(z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)).default([]),
+  /** A pure compatibility inspection, isolated before a host starts the core. */
+  saveInspection: SaveInspectionDeclaration.optional(),
   /** The save format version this engine writes. */
   format: z.number().int().positive().default(1),
 });

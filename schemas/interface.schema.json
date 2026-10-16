@@ -70,6 +70,29 @@
           },
           "default": []
         },
+        "saveInspection": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            }
+          },
+          "required": [
+            "module",
+            "files"
+          ],
+          "additionalProperties": false
+        },
         "format": {
           "type": "integer",
           "exclusiveMinimum": 0,

@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-16: Declare pure save inspection separately from a running engine
+
+**Decision.** Add optional saveInspection module/input paths and a strict semantic result schema. Keep declared saved input bytes separate from the full path inventory. Consumers isolate the module without host authority and require update preservation before a core starts.
+
+**Alternatives.** Teach the App the first-party header path, load every image to detect a format, or infer format from an unchanged semver family.
+
+**Rationale.** E18 preserves older saves even when opens remains compatible. The engine owns its state representation; exact input declarations make inspection small without hiding evidence of a partial state tree. Compatibility inspection does not replace full state validation.
+
 ## 2026-10-16: Public decision classification preserves private questions
 
 **Decision.** AgentReply.decision optionally carries the actual card kind, build, change, layout, pause or other. Only explicit other distinguishes a private question. Older replies omit kind and retain the consumer's conservative change gate; unknown values fail runtime validation. The server independently classifies its durable active-chat card and rechecks authority.
