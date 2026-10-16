@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Adapt the server worker through the existing transport contract
+
+**Decision.** `workerTransport(worker)` supports the Node worker_threads event emitter and Bun's Worker EventTarget without a runtime-specific import in shipped code. It forwards payloads, reports errors and termination through `onClose`, removes listeners on disposal, and requests termination once. Error text is a fixed transport description. An early startup buffer holds up to 1,000 messages until the bridge subscribes; this is an internal guard, not a limit on attached traffic. The loader and bridge retain schema, ask, and endpoint enforcement.
+
+**Alternatives.** Node-only imports in the shared package (unusable in browser consumers). A worker-specific protocol (duplicates the host contract). Treating a worker as a sandbox (the approved plan makes no such guarantee).
+
+**Rationale.** E11 requires the server's worker endpoint to carry the same vocabulary as the App. Local tests execute real Node 24.22.0 and Bun 1.4.3 workers, alongside deterministic message and lifecycle fixtures. The transport closes immediately when it observes failure or termination; graceful final save belongs to the correlated `quit` handler, and native exit observation belongs to the runner. Compiled executables and engine loading remain their own gates.
+
 ## 2026-10-15: Separate the authoritative core and per-person page connections
 
 **Decision.** Add explicit core/page families to each bridge, enforce them before dispatch, stamp the grant's endpoint, and expose distinct loader APIs and a two-port parent handoff. Retain the deprecated combined connection only for existing local 0.3 consumers during migration.

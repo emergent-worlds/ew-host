@@ -37,6 +37,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check:worker": "pnpm build && node scripts/worker-check.mjs",
+    "check:runtime-workers": "node scripts/check-runtime-worker.mjs && bun scripts/check-runtime-worker.mjs",
     "prepare": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
