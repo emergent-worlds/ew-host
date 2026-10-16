@@ -66,3 +66,8 @@ export function checkedStudioScenario(value: unknown, rawActions: readonly Studi
 }
 /** Tools without an input/model port cannot claim interactive or classifier work. */
 export const studioScenarioUnperformed = () => ({ modelCalls: 0, turns: 0, classifier: 'unperformed' } as const);
+
+/** Inability to execute never becomes a missing-variable assertion failure. */
+export function studioScenarioAssertionsUnavailable(expectations: readonly StudioScenarioExpectation[] = []) {
+  return { state: expectations.length ? 'unavailable' as const : 'unperformed' as const, checks: expectations.map((expectation, index) => ({ index, expectation, state: 'unavailable' as const, found: false, actual: null, detail: 'The complete recipe did not execute, so this expectation was not checked.' })) };
+}
