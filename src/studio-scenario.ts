@@ -40,3 +40,5 @@ export function checkedStudioScenario(value: unknown, rawActions: readonly Studi
   if (result.steps.length > actions.length || result.steps.some((step, index) => JSON.stringify(step.action) !== JSON.stringify(actions[index])) || result.state === 'completed' && (result.steps.length !== actions.length || result.steps.some(step => step.state !== 'completed'))) throw new Error('scenario result does not match the exact recipe');
   return result;
 }
+/** Tools without an input/model port cannot claim interactive or classifier work. */
+export const studioScenarioUnperformed = () => ({ modelCalls: 0, turns: 0, classifier: 'unperformed' } as const);
