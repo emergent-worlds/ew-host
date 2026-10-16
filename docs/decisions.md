@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Observe a save before sending its request
+
+**Decision.** Register the save waiter before sending save.request. If the send is refused or throws, remove and reject that waiter immediately.
+
+**Alternatives.** Require asynchronous transports everywhere (an undocumented condition on Transport); poll for an already completed save (adds state and races).
+
+**Rationale.** D8 promises the committed version in reply to requestSave. The previous ordering missed a synchronous transport's save because receive captured the waiter list before requestSave added it. The correction changes no message shape or policy value.
+
 ## 2026-10-15: startCore starts a classic worker that imports the core and holds the page's messages until it listens (0.3.3)
 
 **Decision.** `startCore(url)` (`src/start-core.ts`, exported from the loader) starts the core with `new Worker(blobUrl)`, a classic worker, whose bootstrap imports the core with a dynamic `import()` of its absolute URL. Until the import has resolved, the bootstrap holds every message the worker receives, stops it reaching any other listener, and then dispatches each again in order with its ports, so the page's two handoffs (`handPort` and the pack's own port) reach the core once each. A core that does not load is thrown from the worker's global scope, which the page receives as the worker's error event, as before. `scripts/worker-check.mjs` (`pnpm check:worker`) loads the frame on 127.0.0.1 in an iframe sandboxed with `allow-scripts` only, under a parent on another port, with the App's headers and policy, and starts a core that imports a module under `/uses/` statically and another dynamically, the second loading a WebAssembly module, while both are served late and a third message arrives during the core's own import. It measured:

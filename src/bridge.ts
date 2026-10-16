@@ -111,7 +111,6 @@ export class HostBridge {
    * has been handled; rejects after the bridge's ceiling.
    */
   requestSave(reason: SaveReason, name?: string): Promise<unknown> {
-    if (!this.send({ type: 'save.request', reason, ...(name === undefined ? {} : { name }) })) return Promise.reject(new Error('save.request is not granted to this folder'));
     return new Promise((resolve, reject) => {
       const waiter = {
         reason,
@@ -122,7 +121,14 @@ export class HostBridge {
         this.saveWaiters = this.saveWaiters.filter((w) => w !== waiter);
         reject(new Error(`the folder made no save for ${reason} in ${this.timeoutMs} ms`));
       }, this.timeoutMs);
+      // A transport may deliver synchronously. Observe the save before asking for it.
       this.saveWaiters.push(waiter);
+      try {
+        if (!this.send({ type: 'save.request', reason, ...(name === undefined ? {} : { name }) })) throw new Error('save.request is not granted to this folder');
+      } catch (e) {
+        this.saveWaiters = this.saveWaiters.filter((w) => w !== waiter);
+        waiter.reject(e instanceof Error ? e : new Error(String(e)));
+      }
     });
   }
 
