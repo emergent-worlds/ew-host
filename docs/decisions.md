@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Record actual scenario tools without inventing semantic passes
+
+**Decision.** Declare exact-save advance/set-variable recipes separately from checks, preserve action/tick/hash continuity and keep model turns/classifier unperformed. Reuse the saved-data selector without any host port.
+
+**Alternatives.** Arbitrary privileged operations would bypass declared tool support. Static rows cannot prove a run. Invented player inputs or clean classifier turns would misrepresent PV54.
+
+**Rationale.** S8.3 names these tools and saved named runs; sourceb9cfaff873 specifies the smallest executed recipe while other pack tools and authored assertions stay unavailable.
+
 ## 2026-10-16: Keep Studio saved render separate from play authority
 
 **Decision.** Declare an optional immutable-folder studioRender module with cloned selected saved bytes, normalized manifest and display data. Give it only mount/update/unmount lifecycle, with no host ports.

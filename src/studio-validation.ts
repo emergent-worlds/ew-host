@@ -10,13 +10,13 @@ export const StudioValidationDeclaration = z.object({
 export type StudioValidationDeclaration = z.infer<typeof StudioValidationDeclaration>;
 const Count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const StudioSnapshot = z.object({ versionId: z.string().min(1), treeSha256: z.string().regex(/^[0-9a-f]{64}$/) }).strict();
-export interface StudioValidationInput {
+export interface StudioSavedInput {
   readonly snapshot: z.infer<typeof StudioSnapshot>;
   readonly manifest: unknown;
   readonly paths: readonly string[];
   readonly files: ReadonlyMap<string, Uint8Array>;
-  readonly requestedTicks: number;
 }
+export interface StudioValidationInput extends StudioSavedInput { readonly requestedTicks: number }
 export const StudioValidationFinding = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
   title: z.string().min(1).max(200), state: z.enum(['pass', 'fail', 'unavailable']), detail: z.string().min(1).max(500),
@@ -35,17 +35,20 @@ export type StudioValidationResult = z.infer<typeof StudioValidationResult>;
 export type StudioValidator = (input: StudioValidationInput) => StudioValidationResult | Promise<StudioValidationResult>;
 
 /** The trusted caller verifies tree hashes first; this selection neither reads a source nor grants access. */
-export function studioValidationInput(declaration: StudioValidationDeclaration, input: StudioValidationInput): StudioValidationInput {
+export function studioSavedInput(declaration: StudioValidationDeclaration, input: StudioSavedInput): StudioSavedInput {
   const declared = StudioValidationDeclaration.parse(declaration), snapshot = StudioSnapshot.parse(input.snapshot);
-  if (!Number.isSafeInteger(input.requestedTicks) || input.requestedTicks <= 0 || new Set(input.paths).size !== input.paths.length) throw new Error('invalid validation inventory or tick count');
+  if (new Set(input.paths.map(path => path.toLowerCase())).size !== input.paths.length || input.paths.some(path => !safePath(path) || path.split('/')[0]!.toLowerCase() === 'uses')) throw new Error('invalid Studio own-file inventory');
   const selected = new Map<string, Uint8Array>();
   for (const path of input.paths) {
     if (!declared.reads.some(read => read.endsWith('/') ? path.startsWith(read) : path === read)) continue;
-    if (!safePath(path) || path.split('/')[0]!.toLowerCase() === 'uses') throw new Error('invalid selected own path');
-    const bytes = input.files.get(path); if (!ArrayBuffer.isView(bytes) || Object.prototype.toString.call(bytes) !== '[object Uint8Array]') throw new Error('selected validation bytes are missing');
+    const bytes = input.files.get(path); if (!ArrayBuffer.isView(bytes) || Object.prototype.toString.call(bytes) !== '[object Uint8Array]') throw new Error('selected Studio bytes are missing');
     selected.set(path, new Uint8Array(bytes));
   }
-  return { snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, requestedTicks: input.requestedTicks };
+  return { snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected };
+}
+export function studioValidationInput(declaration: StudioValidationDeclaration, input: StudioValidationInput): StudioValidationInput {
+  if (!Number.isSafeInteger(input.requestedTicks) || input.requestedTicks <= 0) throw new Error('invalid validation tick count');
+  return { ...studioSavedInput(declaration, input), requestedTicks: input.requestedTicks };
 }
 /** A module cannot lower the caller's required run length in its reply. */
 export function checkedStudioValidation(value: unknown, requestedTicks: number): StudioValidationResult {

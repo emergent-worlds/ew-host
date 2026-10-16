@@ -50,6 +50,41 @@
           ],
           "additionalProperties": false
         },
+        "studioScenario": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "reads": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "advance",
+                  "set_variable"
+                ]
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "module",
+            "reads",
+            "actions"
+          ],
+          "additionalProperties": false
+        },
         "needs": {
           "type": "object",
           "properties": {

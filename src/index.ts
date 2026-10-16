@@ -25,3 +25,4 @@ export { serverAddress } from './address.js';
 
 export * from './studio-validation.js';
 export * from './studio-render.js';
+export * from './studio-scenario.js';

@@ -1,0 +1,233 @@
+{
+  "$ref": "#/definitions/studio-scenario",
+  "definitions": {
+    "studio-scenario": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "failed",
+            "unavailable"
+          ]
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "initialTick": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finalTick": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "initialHash": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finalHash": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "index": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "action": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "advance"
+                      },
+                      "ticks": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "ticks"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "set_variable"
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "value": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "completed",
+                  "failed",
+                  "unavailable"
+                ]
+              },
+              "beforeTick": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "afterTick": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "beforeHash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "afterHash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "index",
+              "action",
+              "state",
+              "beforeTick",
+              "afterTick",
+              "beforeHash",
+              "afterHash",
+              "detail"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "numericChanges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "before": {
+                "type": "number"
+              },
+              "after": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "id",
+              "before",
+              "after"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "modelCalls": {
+          "type": "number",
+          "const": 0
+        },
+        "turns": {
+          "type": "number",
+          "const": 0
+        },
+        "classifier": {
+          "type": "string",
+          "const": "unperformed"
+        }
+      },
+      "required": [
+        "state",
+        "detail",
+        "initialTick",
+        "finalTick",
+        "initialHash",
+        "finalHash",
+        "steps",
+        "numericChanges",
+        "modelCalls",
+        "turns",
+        "classifier"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

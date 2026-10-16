@@ -14,6 +14,7 @@
 import { z } from 'zod';
 import semver from 'semver';
 import { JobName } from './manifest.js';
+import { StudioScenarioDeclaration } from './studio-scenario.js';
 import { StudioRenderDeclaration } from './studio-render.js';
 import { StudioValidationDeclaration } from './studio-validation.js';
 
@@ -68,6 +69,7 @@ export const EngineInterface = z.object({
   saveInspection: SaveInspectionDeclaration.optional(),
   studioValidation: StudioValidationDeclaration.optional(),
   studioRender: StudioRenderDeclaration.optional(),
+  studioScenario: StudioScenarioDeclaration.optional(),
   /** The save format version this engine writes. */
   format: z.number().int().positive().default(1),
 });
@@ -86,6 +88,7 @@ export type Slot = z.infer<typeof Slot>;
 export const FolderContract = z.object({
   studioValidation: StudioValidationDeclaration.optional(),
   studioRender: StudioRenderDeclaration.optional(),
+  studioScenario: StudioScenarioDeclaration.optional(),
   needs: z
     .object({
       calls: z.array(EngineCall).default([]),
