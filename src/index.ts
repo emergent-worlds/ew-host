@@ -16,3 +16,5 @@ export type { LoopbackOptions, SocketLike } from './loopback.js';
 export { workerTransport, WORKER_STARTUP_MESSAGES } from './worker.js';
 export type { NodeWorkerEndpoint, WebWorkerEndpoint } from './worker.js';
 export * from './remote-schema.js';
+export { remotePort } from './remote.js';
+export type { RemotePort, RemotePortOptions, RemoteState, RemoteControl, RemoteRequestOptions, RemoteAgentResult } from './remote.js';

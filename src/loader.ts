@@ -1,3 +1,6 @@
+export { remotePort } from './remote.js';
+export type { RemotePort, RemotePortOptions } from './remote.js';
+
 /**
  * The folder's side of the contract. A folder's core imports this, calls
  * `connect()`, and talks to its host through the returned object: in the App's

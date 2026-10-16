@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Preserve page requests through explicit remote synchronization
+
+**Decision.** remotePort returns the existing PortClient surface with snapshot installation, current readiness, input/agent/control access, and explicit reconnect. It retains pending opaque request identities across socket replacement, while separately correlating numeric port ids. It refreshes at 55 minutes and preserves one fixed five-minute disconnected window. The App chooses when to retry after connectivity returns; no immediate loop or unrecorded backoff is introduced.
+
+**Alternatives.** Reuse a join ticket on every reconnect, discard requests through the local port's timeout, or resume input before an exact synchronization acknowledgment and the latest ready sequence.
+
+**Rationale.** E8 and PV85 require authoritative page state before input and deduplicated retry. A stalled snapshot installer is raced against its attempt's abort signal; application code must honor that signal before committing its view. Server admission, method authorization, projection, account/payer identity and request outcomes remain server responsibilities.
+
 ## 2026-10-15: Validate the remote player wire by direction
 
 **Decision.** Export distinct RemoteClientFrame and RemoteServerFrame schemas with fixed-error JSON codecs and emitted JSON Schemas. They carry E8's four player channels and synchronization controls, with safe integer sequences and port ids, a separate opaque request id, and no host/core vocabulary. Admitted resume credentials are opaque strings; trusted account identities remain server-side.
