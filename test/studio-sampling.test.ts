@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { studioSamplingInput, StudioSamplingCorpus, StudioSamplingDeclaration, studioSamplingAgentQuestions, checkedStudioSampling } from '../src/studio-sampling.js';
+import { StudioSamplingDependency,StudioSamplingAgentFacilities,studioSamplingInput, StudioSamplingCorpus, StudioSamplingDeclaration, studioSamplingAgentQuestions, checkedStudioSampling } from '../src/studio-sampling.js';
 it('requires exact authored corpus identities and confined declaration without inventing turns', () => {
  const declaration = { module: 'dist/sample.js', reads: ['state/'], corpus: 'studio/corpus.json' };
  expect(StudioSamplingDeclaration.parse(declaration)).toEqual(declaration);
@@ -29,4 +29,10 @@ it('retains route race winners without promoting late replies or counting author
  expect(checkedStudioSampling({state:'unavailable',detail:'Routing only.',agentRoutes:[route]},20,authored).turns).toBeUndefined();
  expect(checkedStudioSampling({state:'unavailable',detail:'Expired routing.',agentRoutes:[{...route,state:'unavailable',winner:'deadline',decision:null}]},20,authored).agentRoutes![0]!.winner).toBe('deadline');
  for(const bad of [{...route,winner:'deadline'},{...route,id:'wrong'},{...route,callTo:0},{...route,winner:'refused',decision:null}])expect(()=>checkedStudioSampling({state:'unavailable',detail:'Bad route.',agentRoutes:[bad]},20,authored)).toThrow();
+});
+it('retains checked engine-only interface metadata and actual named facility observations',()=>{
+ const engine={ref:'@emergentworlds/emergence-engine',version:'1.0.0',kind:'engine',folderId:'engine',versionId:'saved-engine',treeSha256:'b'.repeat(64),engineInterface:{sha256:'c'.repeat(64),calls:['read','query','explain','forecast'],forecasts:true}};
+ expect(StudioSamplingDependency.parse(engine)).toEqual(engine);for(const invalid of [{...engine,kind:'pack'},{...engine,engineInterface:{...engine.engineInterface,calls:['guess']}}])expect(StudioSamplingDependency.safeParse(invalid).success).toBe(false);
+ const facilities={interfaceSha256:'c'.repeat(64),items:[{facility:'forecast',calls:1,successfulCalls:1,state:'completed'}]};expect(StudioSamplingAgentFacilities.parse(facilities)).toEqual(facilities);
+ for(const invalid of [{...facilities,interfaceSha256:null},{...facilities,items:[...facilities.items,...facilities.items]},{...facilities,items:[{...facilities.items[0],successfulCalls:0}]}])expect(StudioSamplingAgentFacilities.safeParse(invalid).success).toBe(false);
 });

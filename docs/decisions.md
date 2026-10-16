@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Bind read-only sampling facilities to the checked engine interface
+
+**Decision.** Add optional engine-only interface metadata and named actual read/query/explain/forecast observations to the existing saved sampling contracts. Reuse the canonical EngineCall vocabulary through a small shared module.
+
+**Alternatives.** Infer forecasting from method presence, model prose or an unverified claim, or treat aggregate reads as proof of every facility.
+
+**Rationale.** Source d92f0563a7 requires exact interface provenance and actual operation evidence without new host ports or mutation authority. Missing earlier data supplies no forecast or complete acceptance credit.
+
 ## 2026-10-16: Retain actual sampled routing race winners
 
 **Decision.** Add optional ordered authored agentRoutes observations with explicit race winner and nullable decision/span, separately from measured turns and SYSTEM questions.

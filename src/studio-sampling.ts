@@ -1,5 +1,6 @@
 /** PV54: exact authored sampling input; it confers no model or passing-check authority. */
 import { z } from 'zod';
+import { EngineCall } from './engine-call.js';
 import { portablePath } from './builds.js';
 import { studioSavedInput, StudioValidationDeclaration, type StudioSavedInput } from './studio-validation.js';
 const corpusPath = z.string().min(1).max(512).refine(path => portablePath(path) && !/[%#]/.test(path) && path.split('/')[0]!.toLowerCase() !== 'uses', 'an explicit saved own corpus path');
@@ -13,7 +14,9 @@ export const StudioSamplingCorpus = z.object({
 });
 export type StudioSamplingCorpus = z.infer<typeof StudioSamplingCorpus>;
 const Count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), Hash = z.string().regex(/^[0-9a-f]{64}$/);
-export const StudioSamplingDependency = z.object({ ref: z.string(), version: z.string(), kind: z.string(), folderId: z.string(), versionId: z.string(), treeSha256: Hash }).strict();
+export const StudioSamplingEngineInterface=z.object({sha256:Hash,calls:z.array(EngineCall).min(1),forecasts:z.boolean()}).strict();
+export type StudioSamplingEngineInterface=z.infer<typeof StudioSamplingEngineInterface>;
+export const StudioSamplingDependency = z.object({ ref: z.string(), version: z.string(), kind: z.string(), folderId: z.string(), versionId: z.string(), treeSha256: Hash,engineInterface:StudioSamplingEngineInterface.optional() }).strict().superRefine((value,context)=>{if(value.engineInterface&&value.kind!=='engine')context.addIssue({code:z.ZodIssueCode.custom,message:'only a resolved engine carries checked interface metadata'});});
 export const StudioSamplingTurn = z.object({ id: z.string(), inputSha256: Hash, beforeTick: Count, afterTick: Count, beforeHash: Hash, afterHash: Hash, beforeTurns: Count, afterTurns: Count, callFrom: Count.refine(value => value > 0), callTo: Count.refine(value => value > 0) }).strict();
 export const StudioSamplingDescriptionInventory = z.object({ scope: z.string().regex(/^[a-z][a-z0-9_.-]{0,99}$/), items: z.array(z.object({ sourceSha256: Hash, textSha256: Hash, callSequence: Count.refine(value => value > 0).nullable() }).strict()) }).strict();
 export const StudioSamplingDiagnostic = z.object({ownerHandle:z.string().regex(/^@[a-z0-9_]+$/),startedAt:z.string().datetime()}).strict();
@@ -24,7 +27,10 @@ export function studioSamplingAgentQuestions(corpus:StudioSamplingCorpus):z.infe
  const questions=z.array(StudioSamplingAgentQuestion).parse((setup as {agentQuestions?:unknown}).agentQuestions);
  if(new Set(questions.map(question=>question.id)).size!==questions.length)throw new Error('authored agent question identities are unique');return questions;
 }
-export const StudioSamplingAgentObservation = z.object({id:z.string(),inputSha256:Hash,callFrom:Count.refine(n=>n>0).nullable(),callTo:Count.refine(n=>n>0).nullable(),state:z.enum(['completed','failed','unavailable']),readCalls:Count,successfulReads:Count}).strict().superRefine((value,ctx)=>{
+export const StudioSamplingAgentFacility=z.object({facility:z.enum(['read','query','explain','forecast']),calls:Count,successfulCalls:Count,state:z.enum(['completed','failed','unavailable'])}).strict().superRefine((value,context)=>{if(value.successfulCalls>value.calls||value.state==='completed'&&(!value.calls||value.successfulCalls!==value.calls))context.addIssue({code:z.ZodIssueCode.custom,message:'facility completion requires actual successful handler calls'});});
+export const StudioSamplingAgentFacilities=z.object({interfaceSha256:Hash.nullable(),items:z.array(StudioSamplingAgentFacility)}).strict().superRefine((value,context)=>{if(new Set(value.items.map(item=>item.facility)).size!==value.items.length||value.items.some(item=>item.facility==='forecast'&&item.state==='completed')&&value.interfaceSha256===null)context.addIssue({code:z.ZodIssueCode.custom,message:'named facilities are unique and a forecast binds its checked interface'});});
+export type StudioSamplingAgentFacilities=z.infer<typeof StudioSamplingAgentFacilities>;
+export const StudioSamplingAgentObservation = z.object({id:z.string(),inputSha256:Hash,callFrom:Count.refine(n=>n>0).nullable(),callTo:Count.refine(n=>n>0).nullable(),state:z.enum(['completed','failed','unavailable']),readCalls:Count,successfulReads:Count,facilities:StudioSamplingAgentFacilities.optional()}).strict().superRefine((value,ctx)=>{
  if(value.successfulReads>value.readCalls||(value.callFrom===null)!==(value.callTo===null)||value.callFrom!==null&&value.callTo!<value.callFrom||value.state==='completed'&&(!value.successfulReads||value.successfulReads!==value.readCalls||value.callFrom===null))ctx.addIssue({code:z.ZodIssueCode.custom,message:'agent question observations require actual read work and a coherent call span'});
 });
 export const StudioSamplingRouteObservation = z.object({id:z.string(),inputSha256:Hash,callFrom:Count.refine(n=>n>0).nullable(),callTo:Count.refine(n=>n>0).nullable(),state:z.enum(['completed','failed','unavailable']),winner:z.enum(['reply','deadline','refused','cancelled']),decision:z.enum(['turn','change']).nullable()}).strict().superRefine((value,ctx)=>{

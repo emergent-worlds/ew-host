@@ -19,9 +19,8 @@ import { StudioScenarioDeclaration } from './studio-scenario.js';
 import { StudioRenderDeclaration } from './studio-render.js';
 import { StudioValidationDeclaration } from './studio-validation.js';
 
-/** The calls an engine answers (the engines matrix, Section 2.2). Pause and resume are the host's, not the engine's. */
-export const EngineCall = z.enum(['load', 'save', 'advance', 'input', 'read', 'query', 'explain', 'forecast', 'change']);
-export type EngineCall = z.infer<typeof EngineCall>;
+export { EngineCall } from './engine-call.js';
+import { EngineCall } from './engine-call.js';
 
 /**
  * The asks whose part a folder's own code must take (the engines matrix, Section 4):
