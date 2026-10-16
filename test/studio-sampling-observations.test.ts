@@ -18,3 +18,10 @@ it('rejects reused description identities or classifier work and hashes the actu
  expect(studioSamplingPrompt({messages:[{role:'user',content:'Salt Harbor 🌊'}]})).toBe(JSON.stringify({system:null,messages:[{role:'user',content:'Salt Harbor 🌊'}]}));
  expect(studioSamplingPrompt({system:'Actual saved instructions',messages:[{role:'user',content:'look'},{role:'assistant',content:'reply'}]})).not.toBe(studioSamplingPrompt({system:'Actual saved instructions',messages:[{role:'assistant',content:'reply'},{role:'user',content:'look'}]}));
 });
+
+it('retains a separate optional template inventory with unique ordered classifier work', () => {
+ const item = { sourceSha256: hash, textSha256: next, callSequence: 1 }, value = { state: 'unavailable', detail: 'bounded', templates: { scope: 'np.prompt-templates.v1', items: [item] } };
+ expect(checkedStudioSampling(value, 20, authored).templates!.items).toEqual([item]);
+ for (const items of [[item, { ...item, sourceSha256: next }], [item, { ...item, callSequence: 2 }], [{ ...item, callSequence: 2 }, { ...item, sourceSha256: next, callSequence: 1 }]]) expect(() => checkedStudioSampling({ ...value, templates: { ...value.templates, items } }, 20, authored)).toThrow();
+ expect(() => checkedStudioSampling({ ...value, descriptions: { scope: 'fixture.saved.v1', items: [item] } }, 20, authored)).toThrow();
+});

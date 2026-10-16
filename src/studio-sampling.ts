@@ -16,7 +16,7 @@ const Count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), Hash = z.str
 export const StudioSamplingDependency = z.object({ ref: z.string(), version: z.string(), kind: z.string(), folderId: z.string(), versionId: z.string(), treeSha256: Hash }).strict();
 export const StudioSamplingTurn = z.object({ id: z.string(), inputSha256: Hash, beforeTick: Count, afterTick: Count, beforeHash: Hash, afterHash: Hash, beforeTurns: Count, afterTurns: Count, callFrom: Count.refine(value => value > 0), callTo: Count.refine(value => value > 0) }).strict();
 export const StudioSamplingDescriptionInventory = z.object({ scope: z.string().regex(/^[a-z][a-z0-9_.-]{0,99}$/), items: z.array(z.object({ sourceSha256: Hash, textSha256: Hash, callSequence: Count.refine(value => value > 0).nullable() }).strict()) }).strict();
-export const StudioSamplingObservation = z.object({ state: z.enum(['unavailable', 'failed']), detail: z.string().min(1).max(500), turns: z.array(StudioSamplingTurn).optional(), descriptions: StudioSamplingDescriptionInventory.optional() }).strict();
+export const StudioSamplingObservation = z.object({ state: z.enum(['unavailable', 'failed']), detail: z.string().min(1).max(500), turns: z.array(StudioSamplingTurn).optional(), descriptions: StudioSamplingDescriptionInventory.optional(), templates: StudioSamplingDescriptionInventory.optional() }).strict();
 export type StudioSamplingObservation = z.infer<typeof StudioSamplingObservation>;
 export interface StudioSamplingInput extends StudioSavedInput { readonly corpus: StudioSamplingCorpus; readonly requestedTurns: number; readonly resolved?: readonly z.infer<typeof StudioSamplingDependency>[] }
 /** The caller verifies the corpus's immutable path/hash before selecting these cloned data. */
@@ -33,8 +33,12 @@ export function checkedStudioSampling(value: unknown, requestedTurns: number, au
   const turn = turns[index]!, expected = authored[index]!, prior = turns[index - 1];
   if (turn.id !== expected.id || turn.inputSha256 !== expected.inputSha256 || turn.afterTick < turn.beforeTick || turn.afterTurns !== turn.beforeTurns + 1 || turn.callTo < turn.callFrom || prior && (turn.beforeTick !== prior.afterTick || turn.beforeHash !== prior.afterHash || turn.beforeTurns !== prior.afterTurns || turn.callFrom <= prior.callTo)) throw new Error('sampled turns do not match actual ordered observations');
  }
- const descriptions = observation.descriptions?.items ?? [], sequences = descriptions.flatMap(item => item.callSequence === null ? [] : [item.callSequence]);
- if (new Set(descriptions.map(item => item.sourceSha256)).size !== descriptions.length || new Set(sequences).size !== sequences.length || sequences.some((sequence, index) => index > 0 && sequence <= sequences[index - 1]!)) throw new Error('description sources and classifier sequences must be unique and ordered');
+ const used = new Set<number>();
+ for (const inventory of [observation.descriptions, observation.templates]) {
+  const items = inventory?.items ?? [], sequences = items.flatMap(item => item.callSequence === null ? [] : [item.callSequence]);
+  if (new Set(items.map(item => item.sourceSha256)).size !== items.length || sequences.some((sequence, index) => used.has(sequence) || index > 0 && sequence <= sequences[index - 1]!)) throw new Error('named text sources and classifier sequences must be unique and ordered');
+  for (const sequence of sequences) used.add(sequence);
+ }
  return observation;
 }
 /** ew.studio.prompt.v1 hashes actual system/message words, without payer/model/capacity metadata. */

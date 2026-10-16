@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Keep named template evidence separate from assembled requests
+
+**Decision**: Extend sampling observations with optional named template inventory using existing source/text digests and unique classifier sequence references.
+
+**Alternatives**: Count compiled templates as saved descriptions or infer their coverage from whichever prompts the trial happened to assemble.
+
+**Rationale**: Source2c1b0420a5 requires actual scoped work while keeping distinct evidence and legacy observations unchanged.
+
 ## 2026-10-16: Declare an exact-save required scenario inventory
 
 **Decision**: Define the strict saved suite, opaque recipe ids and explicit predicates at studio/scenarios.json, following source4f1362f103.
