@@ -7,11 +7,14 @@
  */
 import { FolderMessage, HostMessage, PROTOCOL_VERSION, deliverable, permitted, type HostMessageIn, type SaveReason } from './protocol.js';
 import type { Asks } from './manifest.js';
+import { endpointReceives, endpointSends, type EndpointFamily } from './endpoints.js';
 
 /** The minimum a transport offers. */
 export interface Transport {
   send(message: unknown): void;
   onMessage(listener: (message: unknown) => void): () => void;
+  /** Socket or worker adapters report disposal so both sides reject outstanding requests. */
+  onClose?(listener: (error: Error) => void): () => void;
   close(): void;
 }
 
@@ -64,34 +67,41 @@ export class HostBridge {
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
   private cancels = new Map<number, AbortController>();
   private saveWaiters: { reason: SaveReason; resolve: (v: unknown) => void; reject: (e: Error) => void }[] = [];
+  private savingWaiters: { reason: SaveReason; resolve: (v: unknown) => void; reject: (e: Error) => void }[] = [];
   private unsubscribe: () => void;
+  private unsubscribeClose: (() => void) | undefined;
+  private closed = false;
 
   constructor(
     private readonly transport: Transport,
     private readonly asks: Asks,
     private readonly handlers: HostHandlers,
     private readonly timeoutMs = 30_000,
+    private readonly family: EndpointFamily = 'combined',
   ) {
     this.unsubscribe = transport.onMessage((raw) => void this.receive(raw));
+    this.unsubscribeClose = transport.onClose?.((error) => this.dispose(error));
   }
 
   /** Sends a host message that needs no answer, if the grant allows it. Returns whether it was sent. */
   send(message: Exclude<HostOut, HostRequest>): boolean {
-    const full = { ew: PROTOCOL_VERSION, ...message } as HostMessage;
+    if (this.closed) return false;
+    const full = { ew: PROTOCOL_VERSION, ...message, ...(message.type === 'grant' ? { endpoint: this.family } : {}) } as HostMessage;
     const parsed = HostMessage.safeParse(full);
     if (!parsed.success) throw new Error(`invalid host message ${message.type}: ${parsed.error.message}`);
-    if (!deliverable(parsed.data, this.asks)) return false;
+    if (!endpointReceives(this.family, parsed.data.type) || !deliverable(parsed.data, this.asks)) return false;
     this.transport.send(parsed.data);
     return true;
   }
 
   /** Sends a request to the folder (pause, resume, state.*, change.*, layout.*) and waits for its reply. */
   request(message: DOmit<HostRequest, 'id'>): Promise<unknown> {
+    if (this.closed) return Promise.reject(new Error('the folder closed'));
     const id = this.nextId++;
     const full = { ew: PROTOCOL_VERSION, id, ...message } as HostMessage;
     const parsed = HostMessage.safeParse(full);
     if (!parsed.success) return Promise.reject(new Error(`invalid host request: ${parsed.error.message}`));
-    if (!deliverable(parsed.data, this.asks)) return Promise.reject(new Error(`${message.type} is not granted to this folder`));
+    if (!endpointReceives(this.family, parsed.data.type) || !deliverable(parsed.data, this.asks)) return Promise.reject(new Error(`${message.type} is not granted to this folder`));
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
@@ -101,7 +111,13 @@ export class HostBridge {
         resolve: (v) => (clearTimeout(timer), resolve(v)),
         reject: (e) => (clearTimeout(timer), reject(e)),
       });
-      this.transport.send(parsed.data);
+      try {
+        this.transport.send(parsed.data);
+      } catch (error) {
+        const waiter = this.pending.get(id);
+        this.pending.delete(id);
+        waiter?.reject(error instanceof Error ? error : new Error('transport send failed'));
+      }
     });
   }
 
@@ -119,6 +135,7 @@ export class HostBridge {
       };
       const timer = setTimeout(() => {
         this.saveWaiters = this.saveWaiters.filter((w) => w !== waiter);
+        this.savingWaiters = this.savingWaiters.filter((w) => w !== waiter);
         reject(new Error(`the folder made no save for ${reason} in ${this.timeoutMs} ms`));
       }, this.timeoutMs);
       // A transport may deliver synchronously. Observe the save before asking for it.
@@ -133,21 +150,32 @@ export class HostBridge {
   }
 
   close(): void {
+    this.dispose(new Error('the folder closed'));
+  }
+
+  private dispose(error: Error): void {
+    if (this.closed) return;
+    this.closed = true;
     this.unsubscribe();
-    for (const p of this.pending.values()) p.reject(new Error('the folder closed'));
+    this.unsubscribeClose?.();
+    for (const p of this.pending.values()) p.reject(error);
     this.pending.clear();
-    for (const w of this.saveWaiters) w.reject(new Error('the folder closed'));
+    for (const w of this.saveWaiters) w.reject(error);
     this.saveWaiters = [];
+    for (const w of this.savingWaiters) w.reject(error);
+    this.savingWaiters = [];
     for (const c of this.cancels.values()) c.abort();
     this.cancels.clear();
     this.transport.close();
   }
 
   private reply(replyTo: number, ok: boolean, result?: unknown, error?: string): void {
+    if (this.closed) return;
     this.transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: replyTo, ok, ...(ok ? { result } : { error }) });
   }
 
   private async receive(raw: unknown): Promise<void> {
+    if (this.closed) return;
     const parsed = FolderMessage.safeParse(raw);
     if (!parsed.success) {
       const id = typeof raw === 'object' && raw !== null && typeof (raw as { id?: unknown }).id === 'number' ? (raw as { id: number }).id : undefined;
@@ -156,7 +184,7 @@ export class HostBridge {
       return;
     }
     const m = parsed.data;
-    const allowed = permitted(m, this.asks);
+    const allowed = endpointSends(this.family, m.type) ? permitted(m, this.asks) : { ok: false as const, reason: `${m.type} is not allowed on the ${this.family} endpoint` };
     if (!allowed.ok) {
       if ('id' in m) this.reply(m.id, false, undefined, allowed.reason);
       this.handlers.refused?.(allowed.reason, raw);
@@ -186,6 +214,7 @@ export class HostBridge {
           for (const w of waiters) w.reject(new Error('save is not handled by this host'));
           return answer(m.id, undefined);
         }
+        this.savingWaiters.push(...waiters);
         try {
           const result = await this.handlers.save(m);
           this.reply(m.id, true, result);
@@ -193,6 +222,8 @@ export class HostBridge {
         } catch (e) {
           this.reply(m.id, false, undefined, (e as Error).message);
           for (const w of waiters) w.reject(e as Error);
+        } finally {
+          this.savingWaiters = this.savingWaiters.filter((w) => !waiters.includes(w));
         }
         return;
       }
@@ -200,7 +231,7 @@ export class HostBridge {
         if (!this.handlers.modelCall) return answer(m.id, undefined);
         const controller = new AbortController();
         this.cancels.set(m.id, controller);
-        const part = (index: number, text: string) => this.transport.send({ ew: PROTOCOL_VERSION, type: 'model.part', reply_to: m.id, index, text });
+        const part = (index: number, text: string) => { if (!this.closed) this.transport.send({ ew: PROTOCOL_VERSION, type: 'model.part', reply_to: m.id, index, text }); };
         try {
           this.reply(m.id, true, await this.handlers.modelCall(m, part, controller.signal));
         } catch (e) {

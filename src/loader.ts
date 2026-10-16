@@ -7,14 +7,17 @@
  */
 import { FolderMessage, HostMessage, PROTOCOL_VERSION, type ModelRequestIn, type SaveReason, type SavedFile } from './protocol.js';
 import type { Transport } from './bridge.js';
+import { endpointReceives, endpointSends, type EndpointFamily } from './endpoints.js';
 
 type Grant = Extract<HostMessage, { type: 'grant' }>;
-type HostRequestType = 'pause' | 'resume' | 'state.read' | 'state.query' | 'state.explain' | 'change.forecast' | 'change.propose' | 'change.apply' | 'change.undo' | 'layout.set' | 'layout.reset';
+type HostRequestType = 'pause' | 'resume' | 'quit' | 'state.read' | 'state.query' | 'state.explain' | 'change.forecast' | 'change.propose' | 'change.apply' | 'change.undo' | 'layout.set' | 'layout.reset';
 type HostEventType = 'corner' | 'display' | 'advance' | 'input' | 'save.request';
 type HostOf<T extends HostMessage['type']> = Extract<HostMessage, { type: T }>;
 
 export interface Host {
   readonly grant: Grant;
+  /** Disposes the local connection and rejects every outstanding request. */
+  close(): void;
   on<T extends HostEventType>(type: T, listener: (m: HostOf<T>) => void): () => void;
   /** Answers the host's requests; the handler's result is the reply. */
   handle<T extends HostRequestType>(type: T, handler: (m: HostOf<T>) => unknown | Promise<unknown>): void;
@@ -61,6 +64,25 @@ export function framePort(timeoutMs = 10_000): Promise<MessagePort> {
   });
 }
 
+/** Receives both split connections in one parent handoff, without a second-listener race. */
+export function framePorts(timeoutMs = 10_000): Promise<{ core: MessagePort; page: MessagePort }> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => (window.removeEventListener('message', h), reject(new Error('no host handed this frame both ports'))), timeoutMs);
+    function h(e: MessageEvent) {
+      if (e.source !== window.parent || !isHandoff(e.data) || !e.ports[0] || !e.ports[1]) return;
+      clearTimeout(timer);
+      window.removeEventListener('message', h);
+      resolve({ core: e.ports[0], page: e.ports[1] });
+    }
+    window.addEventListener('message', h);
+  });
+}
+
+/** Start alongside framePort before the parent handoff; prefer framePorts for both. */
+export function pagePort(timeoutMs = 10_000): Promise<MessagePort> {
+  return framePorts(timeoutMs).then((ports) => ports.page);
+}
+
 /** Waits for the page to hand this worker the host's port (the same handoff, transferred into the worker). */
 export function workerPort(timeoutMs = 10_000): Promise<MessagePort> {
   return new Promise((resolve, reject) => {
@@ -83,14 +105,55 @@ export function handPort(worker: { postMessage(message: unknown, transfer: Trans
 
 /** Connects over a transport; resolves once the host's grant arrives. */
 export function connect(transport: Transport, timeoutMs = 10_000): Promise<Host> {
+  return connectEndpoint(transport, timeoutMs, 'combined');
+}
+
+/** The authoritative core connection in a split frame or headless server. */
+export function connectCore(transport: Transport, timeoutMs = 10_000): Promise<CoreHost> {
+  return connectEndpoint(transport, timeoutMs, 'core').then(({ pick: _pick, exportFile: _export, open: _open, prefs: _prefs, ...core }) => core);
+}
+
+/** Only per-person display, layout, dialogs, preferences and App surfaces. */
+export function connectPage(transport: Transport, timeoutMs = 10_000): Promise<PageHost> {
+  return connectEndpoint(transport, timeoutMs, 'page').then(({ grant, close, on, handle, pick, exportFile, open, prefs }) => ({ grant, close, on, handle, pick, exportFile, open, prefs }));
+}
+
+export interface PageHost extends Pick<Host, 'grant' | 'close' | 'pick' | 'exportFile' | 'open' | 'prefs'> {
+  on<T extends 'corner' | 'display'>(type: T, listener: (m: HostOf<T>) => void): () => void;
+  handle<T extends 'layout.set' | 'layout.reset'>(type: T, handler: (m: HostOf<T>) => unknown | Promise<unknown>): void;
+}
+export interface CoreHost extends Omit<Host, 'pick' | 'exportFile' | 'open' | 'prefs' | 'on' | 'handle'> {
+  on<T extends Exclude<HostEventType, 'corner'>>(type: T, listener: (m: HostOf<T>) => void): () => void;
+  handle<T extends Exclude<HostRequestType, 'layout.set' | 'layout.reset'>>(type: T, handler: (m: HostOf<T>) => unknown | Promise<unknown>): void;
+}
+
+function connectEndpoint(transport: Transport, timeoutMs: number, family: EndpointFamily): Promise<Host> {
   let nextId = 1;
   const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; onPart?: (index: number, text: string) => void }>();
   const listeners = new Map<string, Set<(m: never) => void>>();
   const handlers = new Map<string, (m: never) => unknown>();
+  let closed = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let unsubscribe = () => {};
+  let unsubscribeClose = () => {};
+  let rejectConnect: (error: Error) => void = () => {};
+  const close = (error = new Error('the folder connection closed')) => {
+    if (closed) return;
+    closed = true;
+    clearTimeout(timer);
+    unsubscribe();
+    unsubscribeClose();
+    for (const waiter of pending.values()) waiter.reject(error);
+    pending.clear(); listeners.clear(); handlers.clear();
+    rejectConnect(error);
+    transport.close();
+  };
   const send = (m: Record<string, unknown>) => {
+    if (closed) throw new Error('the folder connection closed');
     const full = { ew: PROTOCOL_VERSION, ...m };
     const parsed = FolderMessage.safeParse(full);
     if (!parsed.success) throw new Error(`invalid folder message ${String(m.type)}: ${parsed.error.message}`);
+    if (!endpointSends(family, parsed.data.type)) throw new Error(`${parsed.data.type} is not allowed on the ${family} endpoint`);
     transport.send(parsed.data);
   };
   const request = (m: Record<string, unknown>, onPart?: (index: number, text: string) => void) => {
@@ -108,46 +171,64 @@ export function connect(transport: Transport, timeoutMs = 10_000): Promise<Host>
   };
 
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('the host sent no grant')), timeoutMs);
+    rejectConnect = reject;
+    timer = setTimeout(() => close(new Error('the host sent no grant')), timeoutMs);
     let host: Host | undefined;
-    transport.onMessage(async (raw) => {
-      const parsed = HostMessage.safeParse(raw);
-      if (!parsed.success) return;
-      const m = parsed.data;
-      if (m.type === 'grant') {
-        clearTimeout(timer);
-        host = makeHost(m);
-        return resolve(host);
-      }
-      if (m.type === 'model.part') {
-        pending.get(m.reply_to)?.onPart?.(m.index, m.text);
-        return;
-      }
-      if (m.type === 'reply') {
-        const p = pending.get(m.reply_to);
-        if (!p) return;
-        pending.delete(m.reply_to);
-        return m.ok ? p.resolve(m.result) : p.reject(new Error(m.error ?? 'the host refused'));
-      }
-      if ('id' in m) {
-        const h = handlers.get(m.type);
-        if (!h) return transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: false, error: `${m.type} is not handled by this folder` });
-        try {
-          const result = await h(m as never);
-          transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: true, result });
-        } catch (e) {
-          transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: false, error: (e as Error).message });
+    try {
+      const unlisten = transport.onMessage(async (raw) => {
+        if (closed) return;
+        const parsed = HostMessage.safeParse(raw);
+        if (!parsed.success) return;
+        const m = parsed.data;
+        if (!endpointReceives(family, m.type)) {
+          if ('id' in m) transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: false, error: `${m.type} is not allowed on the ${family} endpoint` });
+          return;
         }
-        return;
-      }
-      for (const l of listeners.get(m.type) ?? []) l(m as never);
-    });
-    send({ type: 'ready', protocol: PROTOCOL_VERSION });
+        if (m.type === 'grant') {
+          if ((m.endpoint ?? 'combined') !== family) {
+            close(new Error(`expected ${family} grant, received ${m.endpoint}`));
+            return;
+          }
+          clearTimeout(timer);
+          host = makeHost(m);
+          return resolve(host);
+        }
+        if (m.type === 'model.part') {
+          pending.get(m.reply_to)?.onPart?.(m.index, m.text);
+          return;
+        }
+        if (m.type === 'reply') {
+          const p = pending.get(m.reply_to);
+          if (!p) return;
+          pending.delete(m.reply_to);
+          return m.ok ? p.resolve(m.result) : p.reject(new Error(m.error ?? 'the host refused'));
+        }
+        if ('id' in m) {
+          const h = handlers.get(m.type);
+          if (!h) return transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: false, error: `${m.type} is not handled by this folder` });
+          try {
+            const result = await h(m as never);
+            if (!closed) transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: true, result });
+          } catch (e) {
+            if (!closed) transport.send({ ew: PROTOCOL_VERSION, type: 'reply', reply_to: m.id, ok: false, error: (e as Error).message });
+          }
+          return;
+        }
+        for (const l of listeners.get(m.type) ?? []) l(m as never);
+      });
+      unsubscribe = unlisten;
+      if (closed) { unlisten(); return; }
+      const unclose = transport.onClose?.((error) => close(error));
+      unsubscribeClose = unclose ?? (() => {});
+      if (closed) { unclose?.(); return; }
+      send({ type: 'ready', protocol: PROTOCOL_VERSION });
+    } catch (error) { close(error instanceof Error ? error : new Error('transport send failed')); }
   });
 
   function makeHost(grant: Grant): Host {
     return {
       grant,
+      close: () => close(),
       on(type, listener) {
         const set = listeners.get(type) ?? new Set();
         set.add(listener as (m: never) => void);

@@ -181,6 +181,10 @@ export const HostMessage = z.discriminatedUnion('type', [
   z.object({
     ...base,
     type: z.literal('grant'),
+    /** Connection family; combined is only the transitional local 0.3 connection. */
+    endpoint: z.enum(['combined', 'core', 'page']).optional(),
+    mode: z.enum(['play', 'away', 'session', 'server', 'installed']).optional(),
+    players: z.object({ max: z.number().int().min(1).max(10) }).optional(),
     asks: Asks,
     session: z.string().min(1),
     display: Display,
@@ -203,6 +207,8 @@ export const HostMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('pause') }),
   z.object({ ...req, type: z.literal('resume') }),
   z.object({ ...base, type: z.literal('display'), display: Display }),
+  /** The installed build or server saves and exits (Wave 3 E16). */
+  z.object({ ...req, type: z.literal('quit'), reason: z.string().min(1) }),
   /** Save now, for a reason (PV15). The folder answers with a `save` request of its own, carrying the reason. */
   z.object({ ...base, type: z.literal('save.request'), reason: SaveReason, name: z.string().max(80).optional() }),
   /** Running while away: real time elapsed since the last advance, at the owner's pace (PV23). */

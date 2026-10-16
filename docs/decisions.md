@@ -2,6 +2,14 @@
 
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
+## 2026-10-15: Separate the authoritative core and per-person page connections
+
+**Decision.** Add explicit core/page families to each bridge, enforce them before dispatch, stamp the grant's endpoint, and expose distinct loader APIs and a two-port parent handoff. Retain the deprecated combined connection only for existing local 0.3 consumers during migration.
+
+**Alternatives.** Forward page requests through the shared core (mixes account-specific dialogs and preferences between people); remove the existing API immediately (breaks unchanged Wave 2 consumers before their migration is verified).
+
+**Rationale.** Wave 3 E7 and the files record require per-person page operations to stay on that person's device while the authoritative core can run on a server. Each bridge owns its reply scope. New consumers explicitly choose a family and remote guests never receive combined. See split-endpoints.md for migration and acceptance boundaries.
+
 ## 2026-10-15: Observe a save before sending its request
 
 **Decision.** Register the save waiter before sending save.request. If the send is refused or throws, remove and reject that waiter immediately.
