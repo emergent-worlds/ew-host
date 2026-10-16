@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Keep Studio saved render separate from play authority
+
+**Decision.** Declare an optional immutable-folder studioRender module with cloned selected saved bytes, normalized manifest and display data. Give it only mount/update/unmount lifecycle, with no host ports.
+
+**Alternatives.** Reusing the ordinary play entry starts a mutable core and grants unrelated lifecycle. A generic write RPC would define unrequested save/approval behavior.
+
+**Rationale.** S8.2 leaves the render view to the pack while keeping Start and explicit editing actions distinct. Source23f12380bd settles the bounded first inspection contract and keeps asset authorization separate from input selection.
+
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
 
 ## 2026-10-16: Declare pure Studio validation without an overall pass

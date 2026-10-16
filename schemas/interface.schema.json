@@ -116,6 +116,29 @@
           ],
           "additionalProperties": false
         },
+        "studioRender": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "reads": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            }
+          },
+          "required": [
+            "module",
+            "reads"
+          ],
+          "additionalProperties": false
+        },
         "format": {
           "type": "integer",
           "exclusiveMinimum": 0,

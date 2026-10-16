@@ -14,6 +14,7 @@
 import { z } from 'zod';
 import semver from 'semver';
 import { JobName } from './manifest.js';
+import { StudioRenderDeclaration } from './studio-render.js';
 import { StudioValidationDeclaration } from './studio-validation.js';
 
 /** The calls an engine answers (the engines matrix, Section 2.2). Pause and resume are the host's, not the engine's. */
@@ -66,6 +67,7 @@ export const EngineInterface = z.object({
   /** A pure compatibility inspection, isolated before a host starts the core. */
   saveInspection: SaveInspectionDeclaration.optional(),
   studioValidation: StudioValidationDeclaration.optional(),
+  studioRender: StudioRenderDeclaration.optional(),
   /** The save format version this engine writes. */
   format: z.number().int().positive().default(1),
 });
@@ -83,6 +85,7 @@ export type Slot = z.infer<typeof Slot>;
 
 export const FolderContract = z.object({
   studioValidation: StudioValidationDeclaration.optional(),
+  studioRender: StudioRenderDeclaration.optional(),
   needs: z
     .object({
       calls: z.array(EngineCall).default([]),

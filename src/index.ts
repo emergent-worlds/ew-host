@@ -24,3 +24,4 @@ export { BuildFile, BuildList, SignedBuild, canonicalBuildList, parseBuildList, 
 export { serverAddress } from './address.js';
 
 export * from './studio-validation.js';
+export * from './studio-render.js';
