@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Declare an exact-save required scenario inventory
+
+**Decision**: Define the strict saved suite, opaque recipe ids and explicit predicates at studio/scenarios.json, following source4f1362f103.
+
+**Alternatives**: Infer the required set from historical interactive receipts or allow an empty predicate pass.
+
+**Rationale**: Actual suite execution needs immutable author-defined acceptance goals. Parsing alone supplies no acceptance or publication authority.
+
 ## 2026-10-16: Explicit final-state scenario expectations
 
 **Decision**: Add optional advertised tick/variable equality predicates and strict exact-recipe assertion evidence, following sourceba04bcb66c.

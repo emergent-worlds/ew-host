@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { checkedStudioScenario, studioScenarioInput, StudioScenarioDeclaration } from '../src/studio-scenario.js';
+import { checkedStudioScenario, studioScenarioInput, StudioScenarioDeclaration, StudioScenarioSuite, STUDIO_SCENARIO_SUITE_PATH } from '../src/studio-scenario.js';
 const action = { kind: 'advance' as const, ticks: 3 }, declaration = { module: 'dist/scenario.js', reads: ['state/'], actions: ['advance' as const, 'set_variable' as const] };
 const result = { state: 'completed', detail: 'Actual three ticks.', initialTick: 7, finalTick: 10, initialHash: 'a'.repeat(64), finalHash: 'b'.repeat(64), steps: [{ index: 0, action, state: 'completed', beforeTick: 7, afterTick: 10, beforeHash: 'a'.repeat(64), afterHash: 'b'.repeat(64), detail: 'Three ticks.' }], numericChanges: [], modelCalls: 0, turns: 0, classifier: 'unperformed' };
 it('accepts only explicit implemented tools and selects cloned saved bytes without ports', () => {
@@ -29,4 +29,13 @@ it('distinguishes missing variables from null and refuses partial-recipe asserti
   expect(checkedStudioScenario({ ...result, state: 'failed', assertions: { state: 'fail', checks: [check] } }, [action], [expectation]).assertions?.state).toBe('fail');
   expect(() => checkedStudioScenario({ ...result, assertions: { state: 'pass', checks: [{ ...check, state: 'pass' }] } }, [action], [expectation])).toThrow();
   expect(() => checkedStudioScenario({ ...result, state: 'unavailable', steps: [{ ...result.steps[0], state: 'unavailable' }], assertions: { state: 'pass', checks: [{ ...check, state: 'pass', found: true }] } }, [action], [expectation])).toThrow();
+});
+
+it('parses only explicit named required recipes with unique opaque ids and nonempty predicates', () => {
+  const recipe = { id: ' goal ', name: ' Three ticks ', actions: [action], expectations: [{ kind: 'tick_equals', expected: 10 }] };
+  expect(STUDIO_SCENARIO_SUITE_PATH).toBe('studio/scenarios.json');
+  const suite = StudioScenarioSuite.parse({ name: ' Salt Harbor ', scenarios: [recipe] }); expect(suite.name).toBe('Salt Harbor'); expect(suite.scenarios[0]?.id).toBe('goal');
+  expect(StudioScenarioSuite.parse({ name: 'Salt Harbor', scenarios: [] }).scenarios).toEqual([]);
+  for (const scenarios of [[recipe, recipe], [{ ...recipe, id: ' ' }], [{ ...recipe, id: 'x'.repeat(201) }], [{ ...recipe, name: 'x'.repeat(201) }], [{ ...recipe, actions: [] }], [{ ...recipe, expectations: [] }], [{ ...recipe, passed: true }]]) expect(StudioScenarioSuite.safeParse({ name: 'Salt Harbor', scenarios }).success).toBe(false);
+  expect(StudioScenarioSuite.parse({ name: 'Salt Harbor', scenarios: [recipe, { ...recipe, id: 'Goal' }] }).scenarios).toHaveLength(2);
 });

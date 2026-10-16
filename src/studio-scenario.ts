@@ -23,6 +23,15 @@ export const StudioScenarioAction = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('set_variable'), id: z.string().min(1), value: z.union([z.number().finite(), z.string(), z.boolean(), z.null()]) }).strict(),
 ]);
 export type StudioScenarioAction = z.infer<typeof StudioScenarioAction>;
+/** Exact-save authored required suite; parser capacity is separate from customer quotas. */
+export const STUDIO_SCENARIO_SUITE_PATH = 'studio/scenarios.json' as const;
+export const STUDIO_SCENARIO_SUITE_BYTES = 1024 * 1024;
+const ScenarioName = z.string().trim().min(1).max(200);
+export const StudioScenarioRecipe = z.object({ id: ScenarioName, name: ScenarioName, actions: z.array(StudioScenarioAction).min(1), expectations: z.array(StudioScenarioExpectation).min(1) }).strict();
+export type StudioScenarioRecipe = z.infer<typeof StudioScenarioRecipe>;
+export const StudioScenarioSuite = z.object({ name: ScenarioName, scenarios: z.array(StudioScenarioRecipe) }).strict().refine(suite => new Set(suite.scenarios.map(recipe => recipe.id)).size === suite.scenarios.length, 'required recipe ids are unique');
+export type StudioScenarioSuite = z.infer<typeof StudioScenarioSuite>;
+
 export const StudioScenarioDeclaration = StudioValidationDeclaration.extend({ actions: z.array(z.enum(['advance', 'set_variable'])).min(1).refine(actions => new Set(actions).size === actions.length), expectations: z.array(z.enum(['tick_equals', 'variable_equals'])).refine(kinds => new Set(kinds).size === kinds.length).optional() }).strict();
 export type StudioScenarioDeclaration = z.infer<typeof StudioScenarioDeclaration>;
 export interface StudioScenarioInput extends StudioSavedInput { readonly actions: readonly StudioScenarioAction[]; readonly expectations?: readonly StudioScenarioExpectation[] }
