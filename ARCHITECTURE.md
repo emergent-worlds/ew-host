@@ -94,3 +94,6 @@ Source4f1362f103 defines StudioScenarioSuite for the exact root studio/scenarios
 Named sampling text, source2c1b0420a5: an optional templates inventory separately binds actual compiled prompt-template source/text hashes to distinct ordered classifier sequences. Existing assembled prompts and saved descriptions retain their meanings. Structural observations supply no clean flag or complete arbitrary-code coverage.
 
 Verified Studio own-tree metadata, source47a0604d2b: optional path/hash/size inventory accompanies selected bytes without expanding reads. The selector checks exact paths, selected complete-byte size/digest and clones metadata. Trusted execution callers derive metadata from the same already-verified root tree; it is not an authority supplied by executable output. Older callers remain supported without complete-tree protocol evidence.
+
+
+Read-only agent sampling source c1053d8350 adds optional admitted owner/timestamp input and separately authored agent-question observations. Strict nullable call spans and read counts do not establish play turns. The shared checker binds questions to the authored ordered input prefix and refuses malformed completion or overlapping work. Older callers remain valid without these fields; the actual AgentSession/call accounting producer remains independent.

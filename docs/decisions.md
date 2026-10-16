@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Keep read-only agent questions separate from sampled play turns
+
+**Decision.** Add optional diagnostic identity/time and strict authored question observations to the existing sampling contract. Bind question identities/digests and ordered call spans independently from counted play turns.
+
+**Alternatives.** Treat questions as turns, allow a module-supplied completed count, or require new input for every old caller.
+
+**Rationale.** Source c1053d8350 requires real SYSTEM/AgentSession work without inventing route/timer or twenty-turn coverage. The actual producer must correlate retained model receipts and current authority.
+
 ## 2026-10-16: Preserve verified own-tree identities without expanding reads
 
 **Decision**: Add optional cloned own path/hash/size metadata to Studio saved input, check selected bytes against it and preserve declared read selection.
