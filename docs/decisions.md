@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Bind authored diagnostic choices to actual change observations
+
+**Decision.** Add strict optional Studio sampling action and observation contracts for the exact authored diagnostic choice, original proposal/card, actual copied barrier/application/readback and any requested undo, with ordered nonreused call spans.
+
+**Alternatives.** Infer approval from model prose, reuse an unrelated card or passing read trial, expose generic control scripts, or treat schema validation as actual execution.
+
+**Rationale.** Sources7639aa1bfb/ffae18c751 require an actual disposable AgentSession transaction without granting live approval, Platform saves or complete model/handoff acceptance. Older optional absence remains unperformed.
+
 ## 2026-10-16: Bind read-only sampling facilities to the checked engine interface
 
 **Decision.** Add optional engine-only interface metadata and named actual read/query/explain/forecast observations to the existing saved sampling contracts. Reuse the canonical EngineCall vocabulary through a small shared module.
