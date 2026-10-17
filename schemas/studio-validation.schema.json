@@ -42,6 +42,43 @@
           },
           "minItems": 1
         },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "warn",
+                  "unavailable"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "detail",
+              "state"
+            ],
+            "additionalProperties": false
+          }
+        },
         "run": {
           "type": "object",
           "properties": {

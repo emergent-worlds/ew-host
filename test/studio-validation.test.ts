@@ -38,3 +38,11 @@ it('preserves verified tree identities without granting unselected bytes and ref
  const selected=studioValidationInput(declaration,source);expect(selected.tree).toEqual(tree);expect([...selected.files.keys()]).toEqual(['state/engine.json']);expect(selected.tree).not.toBe(tree);expect(selected.tree![0]).not.toBe(tree[0]);
  for(const invalid of [[tree[0]!], [tree[0]!,tree[0]!], [{...tree[0]!,sha256:'0'.repeat(64)},tree[1]!],[{...tree[0]!,size:bytes.length+1},tree[1]!],[tree[0]!,{...tree[1]!,path:'../private.bin'}]])expect(()=>studioValidationInput(declaration,{...source,tree:invalid})).toThrow();
 });
+
+it('preserves optional nonblocking warning diagnostics without inventing old evidence', () => {
+ const warning = {id:'pack.controlled_names',title:'Visible names for player-controlled variables',state:'warn',detail:'One actual controlled variable has no visible label.'};
+ expect(checkedStudioValidation(result,365).warnings).toBeUndefined();
+ expect(checkedStudioValidation({...result,checks:[{...finding,state:'fail'}],warnings:[warning]},365)).toMatchObject({checks:[{state:'fail'}],warnings:[warning]});
+ for(const warnings of [[warning,warning],[{...warning,id:finding.id}],[{...warning,state:'fail'}],[{...warning,extra:true}]])expect(()=>checkedStudioValidation({...result,warnings},365)).toThrow();
+ for(const state of ['pass','warn','unavailable'])expect(checkedStudioValidation({...result,warnings:[{...warning,state}]},365).warnings?.[0]?.state).toBe(state);
+});

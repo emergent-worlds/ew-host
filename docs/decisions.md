@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Separate nonblocking validation diagnostics
+
+**Decision:** Add optional strict warnings to saved Studio validation results, with pass/warn/unavailable and unique identities across checks and warnings.
+
+**Alternatives:** Add warn to required checks, or discard nonblocking findings.
+
+**Rationale:** StudioCheck names an actual nonblocking controlled-variable diagnostic. Existing required failure semantics and legacy unperformed evidence remain unchanged.
+
 ## 2026-10-16: Retain named invariant facilities within authored changes
 
 **Decision.** Add optional existing read/query/explain/forecast observations to each authored change transaction and check their actual count/outcome consistency.

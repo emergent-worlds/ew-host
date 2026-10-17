@@ -24,6 +24,9 @@ export const StudioValidationFinding = z.object({
   id: z.string().regex(/^[a-z][a-z0-9_.-]{0,63}$/),
   title: z.string().min(1).max(200), state: z.enum(['pass', 'fail', 'unavailable']), detail: z.string().min(1).max(500),
 }).strict();
+/** Nonblocking diagnostics are distinct from required findings. Omission is unperformed. */
+export const StudioValidationWarning = StudioValidationFinding.omit({ state: true }).extend({ state: z.enum(['pass', 'warn', 'unavailable']) }).strict();
+export type StudioValidationWarning = z.infer<typeof StudioValidationWarning>;
 export const StudioValidationRun = z.object({
   state: z.enum(['pass', 'fail', 'unavailable']), requestedTicks: Count.refine(n => n > 0), completedTicks: Count,
   initialTick: Count.nullable(), finalTick: Count.nullable(), detail: z.string().min(1).max(500),
@@ -31,8 +34,9 @@ export const StudioValidationRun = z.object({
   const { completedTicks: made, requestedTicks: requested, initialTick: start, finalTick: end } = run;
   if (made > requested || (start === null) !== (end === null) || start === null && made !== 0 || start !== null && end !== null && end - start !== made || run.state === 'pass' && (made !== requested || start === null || end === null)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'the run must describe actual counted ticks' });
 });
-export const StudioValidationResult = z.object({ checks: z.array(StudioValidationFinding).min(1), run: StudioValidationRun }).strict().superRefine((result, ctx) => {
-  if (new Set(result.checks.map(check => check.id)).size !== result.checks.length) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'validation check ids are unique' });
+export const StudioValidationResult = z.object({ checks: z.array(StudioValidationFinding).min(1), warnings: z.array(StudioValidationWarning).optional(), run: StudioValidationRun }).strict().superRefine((result, ctx) => {
+  const ids = [...result.checks, ...(result.warnings ?? [])].map(row => row.id);
+  if (new Set(ids).size !== ids.length) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'validation finding and warning ids are unique' });
 });
 export type StudioValidationResult = z.infer<typeof StudioValidationResult>;
 export type StudioValidator = (input: StudioValidationInput) => StudioValidationResult | Promise<StudioValidationResult>;
