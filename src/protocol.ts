@@ -1,3 +1,4 @@
+import {SelectedEngine} from './engine-selection.js';
 /**
  * The host contract's message vocabulary, version 1 (the files page, Section 5;
  * the plan, Section 3.2; the wave 2 design, D8 to D11). One vocabulary over three
@@ -201,6 +202,8 @@ export const HostMessage = z.discriminatedUnion('type', [
     files: z.array(TreeFile).max(10000).default([]),
     /** The folders it uses, resolved, as they are laid out under `/uses/<ref>/` on the folder's origin (D6). */
     uses: z.array(z.object({ ref: FolderRef, version: z.string().min(1), kind: z.string() })).default([]),
+    /** Exact engine selected by the host's immutable dependency resolution. */
+    selectedEngine: SelectedEngine.optional(),
     /** The person's stored preferences for this folder, held per account across Realities and devices (D30). */
     prefs: z.unknown().optional(),
   }),

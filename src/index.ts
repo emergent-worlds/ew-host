@@ -28,3 +28,5 @@ export * from './studio-render.js';
 export * from './studio-scenario.js';
 
 export * from './studio-sampling.js';
+
+export * from './engine-selection.js';

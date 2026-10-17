@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-17: Carry the host-selected exact engine into execution
+
+**Decision:** Add optional closed SelectedEngine context to core grants and exact-save Studio inputs. It retains the selected immutable version, tree, interface, module and actual forecast capability. Existing input shapes remain valid.
+
+**Alternatives:** Import a fixed first-party engine URL, or infer the chosen engine from object insertion order.
+
+**Rationale:** The admitted R4 Library engine-change journey needs the same exact selected implementation in play, validation, sampling, scenarios and rendering. The trusted caller establishes identity and access; the context grants no dependency bytes. Command Center16a52cdfde/c112c22305 and permanent S6/S8 source7200495ba5 govern the complete branch.
+
 ## 2026-10-16: Separate nonblocking validation diagnostics
 
 **Decision:** Add optional strict warnings to saved Studio validation results, with pass/warn/unavailable and unique identities across checks and warnings.
