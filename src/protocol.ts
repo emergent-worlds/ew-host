@@ -308,6 +308,9 @@ export const PauseReply = z.object({ at: z.number().optional(), paused: z.boolea
  */
 export function permitted(msg: FolderMessage, asks: z.infer<typeof Asks>): { ok: true } | { ok: false; reason: string } {
   switch (msg.type) {
+    case 'file.pick':
+    case 'file.export':
+      return asks.surface !== 'none' ? { ok: true } : { ok: false, reason: 'a visible page is required for file dialogs' };
     case 'save':
       return asks.saves ? { ok: true } : { ok: false, reason: 'the folder did not ask for saves' };
     case 'model.call': {
