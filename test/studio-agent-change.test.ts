@@ -25,3 +25,9 @@ it('refuses reused spans or actions appearing before the prior question complete
  expect(()=>checkedStudioSampling({...envelope(observation),agentQuestions:[question]},20,[],[{id:'why',inputSha256:hash}],[{...action,inputSha256:input}])).toThrow();
  const second={...observation,id:'other'};expect(()=>checkedStudioSampling({...envelope(observation),agentChanges:[observation,second]},20,[],[],[{...action,inputSha256:input},{...action,id:'other',inputSha256:input}])).toThrow();
 });
+
+it('retains optional named invariant facilities and refuses contradictory change read evidence',()=>{
+ const facilities={interfaceSha256:hash,items:[{facility:'read',calls:1,successfulCalls:1,state:'completed'}]};expect(StudioSamplingAgentChangeObservation.parse({...observation,facilities}).facilities).toEqual(facilities);
+ for(const item of [{facility:'read',calls:2,successfulCalls:1,state:'unavailable'},{facility:'read',calls:1,successfulCalls:0,state:'failed'},{facility:'read',calls:0,successfulCalls:0,state:'unavailable'}])expect(()=>StudioSamplingAgentChangeObservation.parse({...observation,facilities:{...facilities,items:[item]}})).toThrow();
+ expect(StudioSamplingAgentChangeObservation.parse({...observation,state:'failed',successfulReads:0,facilities:{...facilities,items:[{facility:'read',calls:1,successfulCalls:0,state:'failed'}]}}).state).toBe('failed');
+});

@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-16: Retain named invariant facilities within authored changes
+
+**Decision.** Add optional existing read/query/explain/forecast observations to each authored change transaction and check their actual count/outcome consistency.
+
+**Alternatives.** Infer the facilities from a proposal forecast or total successful reads.
+
+**Rationale.** Sourcefe3a522cbf requires actual named handler observations before a complete original-change trial can receive scoped protocol credit. Mutation and Platform model evidence remain independent; absent optional evidence cannot supply completion.
+
 ## 2026-10-16: Bind authored diagnostic choices to actual change observations
 
 **Decision.** Add strict optional Studio sampling action and observation contracts for the exact authored diagnostic choice, original proposal/card, actual copied barrier/application/readback and any requested undo, with ordered nonreused call spans.
