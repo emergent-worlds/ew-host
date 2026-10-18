@@ -7,7 +7,7 @@ export interface StudioAuthoringSession {
   readonly contextDigest: string;
   readonly validUntil: number;
   now(): number;
-  assertCurrent(): void;
+  assertCurrent(input: StudioSavedInput): void;
 }
 export interface StudioAuthoringPorts {
   /** The executor accepts only its exact run input object, once per copied host. */
