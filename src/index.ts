@@ -30,3 +30,5 @@ export * from './studio-scenario.js';
 export * from './studio-sampling.js';
 
 export * from './engine-selection.js';
+
+export * from './component-selection.js';

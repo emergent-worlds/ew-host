@@ -1,3 +1,4 @@
+import type {SelectedComponents} from './component-selection.js';
 import type {SelectedEngine} from './engine-selection.js';
 /** S8.2: a pack-owned saved-snapshot view, with no play or persistence port. */
 import type { Manifest } from './manifest.js';
@@ -10,6 +11,8 @@ export const StudioRenderDeclaration = StudioValidationDeclaration;
 export type StudioRenderDeclaration = z.infer<typeof StudioRenderDeclaration>;
 export interface StudioRenderInput {
   readonly selectedEngine?: SelectedEngine;
+  readonly selectedComponents?: SelectedComponents;
+  readonly componentBindingDigest?: string;
   readonly snapshot: z.infer<typeof StudioSnapshot>;
   readonly manifest: Manifest;
   readonly paths: readonly string[];

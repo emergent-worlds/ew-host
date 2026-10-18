@@ -1,3 +1,4 @@
+import type {SelectedComponents} from './component-selection.js';
 /**
  * Whether folders work together, shown as a mod menu shows it (the files page,
  * Section 6; the engines matrix, Section 6; MR5.3).
@@ -108,15 +109,33 @@ export function resolveEntry(m: Manifest, catalog: Catalog, resolved: Map<string
  * uses, for one device. `engineRef` names the engine the folder runs on, found
  * through its uses.
  */
-export function markFolder(m: Manifest, catalog: Catalog, device: Device, engineRef?: string, pictures?: Pictures): MarkResult {
+export function markFolder(m: Manifest, catalog: Catalog, device: Device, engineRef?: string, pictures?: Pictures, selection?:SelectedComponents): MarkResult {
   if (device === 'phone' && m.entry && m.entry.web === undefined && m.entry.installs) {
     return { mark: "won't work", reason: 'it installs on a computer and has no entry for a phone' };
   }
   const { resolved, outside, missing } = resolveUses(m, catalog);
   if (missing) return { mark: "won't work", reason: `${missing} cannot be found` };
   let mayWork = outside;
-  if (m.asks && !resolveEntry(m, catalog, resolved)) {
+  if (m.asks && !(selection?.entry??resolveEntry(m, catalog, resolved))) {
     return { mark: "won't work", reason: 'nothing it uses names an entry for it to run with' };
+  }
+  for(const [ref,version]of resolved){
+    const used=catalog.manifest(ref,version);if(used?.kind!=='module'&&used?.kind!=='pack')continue;
+    const contract=catalog.contract(ref,version);if(!contract){mayWork??=`${ref} states no contract`;continue;}
+    if(selection?.engine===null&&(contract.needs.calls.length||contract.needs.state.length))return {mark:"won't work",reason:`${ref} needs an engine which is not selected`};
+    for(const [fit,range]of Object.entries(contract.fits)){
+      const target=(m.kind===fit?m.version:resolved.get(fit))??[...resolved].find(([other,v])=>catalog.manifest(other,v)?.kind===fit)?.[1];
+      if(!target||!semver.validRange(range)||!semver.satisfies(target,range))mayWork??=`${ref} does not confirm compatibility with ${fit} ${range}`;
+    }
+  }
+  if(selection){
+    const entry=selection.entry,carrier=entry.ref===null?m:catalog.manifest(entry.ref,resolved.get(entry.ref)??'');
+    if(!carrier?.entry||device==='phone'&&!entry.web||device==='computer'&&!entry.web&&!entry.headless)return {mark:"won't work",reason:'the selected entry cannot run on this device'};
+    const gives=entry.ref?catalog.contract(entry.ref,resolved.get(entry.ref)??'')?.adds.gives??[]:[];
+    for(const [slot,modules]of Object.entries(selection.slots)){
+      if(!gives.includes(slot as import('./interface.js').Slot))return {mark:"won't work",reason:`the selected entry does not expose the ${slot} slot`};
+      for(const module of modules)if(!catalog.contract(module.ref,resolved.get(module.ref)??'')?.adds.slots.includes(slot as import('./interface.js').Slot))return {mark:"won't work",reason:`${module.ref} does not provide the ${slot} slot`};
+    }
   }
   if (engineRef) {
     const ev = resolved.get(engineRef);

@@ -1,3 +1,4 @@
+import {SelectedComponents,componentExecution} from './component-selection.js';
 import {SelectedEngine,type SelectedEngine as EngineSelection} from './engine-selection.js';
 /** S8.4/PV54: declared pure exact-byte validation, distinct from an overall Studio pass. */
 import { z } from 'zod';
@@ -15,6 +16,8 @@ export const StudioSnapshot = z.object({ versionId: z.string().min(1), treeSha25
 export const StudioTreeFile = z.object({ path: z.string().refine(safePath), sha256: z.string().regex(/^[0-9a-f]{64}$/), size: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) }).strict();
 export interface StudioSavedInput {
   readonly selectedEngine?: EngineSelection;
+  readonly selectedComponents?: SelectedComponents;
+  readonly componentBindingDigest?: string;
   readonly snapshot: z.infer<typeof StudioSnapshot>;
   readonly manifest: unknown;
   readonly paths: readonly string[];
@@ -57,7 +60,8 @@ export function studioSavedInput(declaration: StudioValidationDeclaration, input
     const metadata = byPath.get(path); if (tree && (!metadata || metadata.size !== bytes.byteLength || metadata.sha256 !== sha256(bytes))) throw new Error('selected Studio bytes differ from verified tree metadata');
     selected.set(path, new Uint8Array(bytes));
   }
-  return { snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, ...(tree ? { tree } : {}), ...(input.selectedEngine?{selectedEngine:SelectedEngine.parse(input.selectedEngine)}:{}) };
+  const components=componentExecution(input);
+  return { ...(components?{selectedComponents:components,componentBindingDigest:components.bindingDigest}:{}), snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, ...(tree ? { tree } : {}), ...(input.selectedEngine?{selectedEngine:SelectedEngine.parse(input.selectedEngine)}:{}) };
 }
 export function studioValidationInput(declaration: StudioValidationDeclaration, input: StudioValidationInput): StudioValidationInput {
   if (!Number.isSafeInteger(input.requestedTicks) || input.requestedTicks <= 0) throw new Error('invalid validation tick count');

@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-17: Retain explicit component entry and slot identity
+
+**Decision:** Carry a closed optional SelectedComponents context through grants and exact-save Studio inputs, with a binding digest, nullable engine, explicit entry and exact slot fillers.
+
+**Alternatives:** Recompute entry by object iteration, select modules by first-party short names, or omit selection when copying a save.
+
+**Rationale:** The admitted Library module/pack batch needs the same immutable choice in normal play, copy, Check and publication. Several fillers may coexist for a pack slot. Source authority is established by callers and is never created by this metadata. CCd4c3872794 and canonical e522778209 define the complete batch.
+
 ## 2026-10-17: Preserve transitive engine metadata beside an explicit selection
 
 **Decision:** When checking a selected engine, treat other resolved folders with a real engine interface as engines, while checking all pack/module requirements against the selected implementation.
