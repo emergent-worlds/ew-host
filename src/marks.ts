@@ -119,7 +119,7 @@ export function markFolder(m: Manifest, catalog: Catalog, device: Device, engine
   if (m.asks && !(selection?.entry??resolveEntry(m, catalog, resolved))) {
     return { mark: "won't work", reason: 'nothing it uses names an entry for it to run with' };
   }
-  for(const [ref,version]of resolved){
+  if(selection)for(const [ref,version]of resolved){
     const used=catalog.manifest(ref,version);if(used?.kind!=='module'&&used?.kind!=='pack')continue;
     const contract=catalog.contract(ref,version);if(!contract){mayWork??=`${ref} states no contract`;continue;}
     if(selection?.engine===null&&(contract.needs.calls.length||contract.needs.state.length))return {mark:"won't work",reason:`${ref} needs an engine which is not selected`};

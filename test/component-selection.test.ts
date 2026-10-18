@@ -32,3 +32,5 @@ it('refuses a dropped or contradictory bound execution context without changing 
  expect(()=>componentExecution({componentBindingDigest:'a'.repeat(64),selectedComponents:selection(),selectedEngine:{ref:'@ironwrit/other-engine'}})).toThrow();
  expect(()=>componentExecution({componentBindingDigest:'a'.repeat(64),selectedComponents:selection(),uses:[{ref:pack,kind:'pack'}]})).toThrow();
 });
+
+it('preserves the legacy mark interpretation without explicit component selection',()=>{const f=facts({fits:{[pack]:'^2'}});expect(markFolder(f.root,f.catalog,'computer').mark).toBe('works');expect(markFolder(f.root,f.catalog,'computer',undefined,undefined,selection()).mark).toBe('may work');});
