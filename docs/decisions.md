@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-18: Bind scoped transactions to the actual private host operation
+
+**Decision:** Add an optional core-only transaction observation and closed actor/host/core/policy/proposal/decision/tree tuple. A reusable host helper runs within the caller's existing CoreOperations queue, captures authority callbacks, rechecks current authority after awaits and issues one observation. The complete outside tree excludes only enumerated exact Engine-owned paths. Unknown inverse persistence blocks further mutations until original-save recovery or persisted-state reload.
+
+**Alternatives:** Infer actor or creator purpose from SYSTEM, ownership or a model payload; use the Engine state hash as a full folder identity; run a separate queue for observations; restore an older whole tree after scoped undo.
+
+**Rationale:** The admitted R2 complete consumer continuation requires a one-use private observation after actual authority/save barriers. The public folder-port vocabulary is unchanged. This additive seam does not enable scoped play, approve a decision, provide current authority by shape or prove a selected Engine's guards. Pack, App and Server must compose their actual lifetimes, operation queues and persistence before activation.
+
 ## 2026-10-17: Retain explicit component entry and slot identity
 
 **Decision:** Carry a closed optional SelectedComponents context through grants and exact-save Studio inputs, with a binding digest, nullable engine, explicit entry and exact slot fillers.

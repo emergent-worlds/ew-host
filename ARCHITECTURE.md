@@ -129,3 +129,10 @@ Component fit/slot interpretation is enabled only by the explicit component cont
 0.3.7 R4 Studio consumers retain an optional verified resolved-use vector alongside selected component context. Studio input selection validates and clones it, so copied diagnostic cores can validate exact slot and entry references without rediscovering dependency versions. Existing callers without this vector retain their prior inputs.
 
 0.3.8: `startCore` optionally reports structured import failure before the browser error event, whose original exception is absent in Chromium and WebKit. Known JavaScript exceptions are distinguished from TypeError and unknown load failures; ambiguous failures cannot authorize automatic component undo. The callback is bound to the worker and exact core URL and fires once. Legacy callers retain their worker error event.
+
+
+## Private scoped transaction observation
+
+R2's admitted consumer continuation adds optional scopedTransactions metadata and host-stamped scoped actor bindings to the existing privileged change messages. The closed tuple names the actual host and actor generations, purpose, immutable loaded policy, core generation, exact proposal/decision, complete Engine path inventory and every remaining path/hash. transaction.observe is core-only; both page and transitional combined endpoints refuse it. Existing messages with fields omitted retain their prior meaning.
+
+ScopedHostTransactions uses the injected existing CoreOperations queue. Nested observations belong to the operation already holding that queue and cannot join behind themselves. Current actor/host/lease is checked after awaited authorization, the exact current outside tree is compared, and one observation binds its expected save parent. Caller composition must keep all relevant mutations on that same queue and enforce the final synchronous Pack/Engine assertion. The helper captures callbacks before awaits and blocks fresh writes after unknown inverse persistence. This is the private transport prerequisite, not complete scoped runtime activation or a public port capability.

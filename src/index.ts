@@ -32,3 +32,5 @@ export * from './studio-sampling.js';
 export * from './engine-selection.js';
 
 export * from './component-selection.js';
+
+export * from './scoped-transactions.js';

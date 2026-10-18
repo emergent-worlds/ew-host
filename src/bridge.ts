@@ -42,6 +42,8 @@ type FolderOf<T extends FolderMessage['type']> = Extract<FolderMessage, { type: 
 /** What the host does with each kind of folder message. Requests resolve to a reply's result. */
 export interface HostHandlers {
   ready?(): void;
+  /** Called only on the private core endpoint, within its actual host operation gate. */
+  transactionObserve?(m: FolderOf<'transaction.observe'>): Promise<unknown>;
   progress?(fraction: number, text?: string): void;
   status?(line: string): void;
   /** Commits the save as a version; resolves `{ version, seq, at }`. */
@@ -248,6 +250,8 @@ export class HostBridge {
         return this.cancels.get(m.id)?.abort();
       case 'event':
         return this.handlers.event?.(m);
+      case 'transaction.observe':
+        return answer(m.id, this.handlers.transactionObserve && (() => this.handlers.transactionObserve!(m)));
       case 'agent.ask':
         return answer(m.id, this.handlers.agentAsk && (() => this.handlers.agentAsk!(m)));
       case 'agent.decide':

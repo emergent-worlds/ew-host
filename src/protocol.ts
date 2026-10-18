@@ -1,3 +1,4 @@
+import {ScopedActorBinding, ScopedTransactionGrant, ScopedObservationInput} from './scoped-transactions.js';
 import {SelectedComponents,ComponentFailure} from './component-selection.js';
 import {SelectedEngine} from './engine-selection.js';
 /**
@@ -205,6 +206,8 @@ export const HostMessage = z.discriminatedUnion('type', [
     uses: z.array(z.object({ ref: FolderRef, version: z.string().min(1), kind: z.string() })).default([]),
     /** Exact engine selected by the host's immutable dependency resolution. */
     selectedEngine: SelectedEngine.optional(),
+    /** Trusted host capability on the private core endpoint; absent hosts remain unchanged. */
+    scopedTransactions: ScopedTransactionGrant.optional(),
     selectedComponents: SelectedComponents.optional(),
     componentBindingDigest: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     /** The person's stored preferences for this folder, held per account across Realities and devices (D30). */
@@ -229,12 +232,12 @@ export const HostMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('state.query'), query: StateQuery }),
   z.object({ ...req, type: z.literal('state.explain'), subject: z.string().min(1) }),
   /** What would happen: a projection that moves nothing and stores no proposal (FE.10). */
-  z.object({ ...req, type: z.literal('change.forecast'), change: Change, horizon: z.number().nonnegative().optional() }),
+  z.object({ ...req, type: z.literal('change.forecast'), scoped: ScopedActorBinding.optional(), change: Change, horizon: z.number().nonnegative().optional() }),
   /** The Reality Agent loop's first half: apply to a copy, check, report; `revises` names an earlier proposal planned again. */
-  z.object({ ...req, type: z.literal('change.propose'), change: Change, revises: z.string().optional() }),
+  z.object({ ...req, type: z.literal('change.propose'), scoped: ScopedActorBinding.optional(), change: Change, revises: z.string().optional() }),
   /** Commit a stored proposal the person approved, or one the approved plan covers during a build (D9). */
-  z.object({ ...req, type: z.literal('change.apply'), proposal: z.string().min(1), approvedBy: z.enum(['person', 'plan']).default('person'), decision: z.string().optional() }),
-  z.object({ ...req, type: z.literal('change.undo') }),
+  z.object({ ...req, type: z.literal('change.apply'), scoped: ScopedActorBinding.optional(), proposal: z.string().min(1), approvedBy: z.enum(['person', 'plan']).default('person'), decision: z.string().optional() }),
+  z.object({ ...req, type: z.literal('change.undo'), scoped: ScopedActorBinding.optional() }),
   /** A person's own layout of the panels and views inside the Reality (the files page, Section 7; S3 F3.42), in the pack's documented form. */
   z.object({ ...req, type: z.literal('layout.set'), layout: z.unknown() }),
   z.object({ ...req, type: z.literal('layout.reset') }),
@@ -250,6 +253,7 @@ export type HostMessageIn = z.input<typeof HostMessage>;
 /* ---------- From the folder to the host ---------- */
 
 export const FolderMessage = z.discriminatedUnion('type', [
+  z.object({...req, type: z.literal('transaction.observe'), input: ScopedObservationInput}),
   z.object({ ...base, type: z.literal('ready'), protocol: z.literal(PROTOCOL_VERSION) }),
   /**
    * How far along opening is, for the opening board (S3 3.3f); optional. A progress of 1, or the
@@ -318,6 +322,8 @@ export function permitted(msg: FolderMessage, asks: z.infer<typeof Asks>): { ok:
     case 'file.pick':
     case 'file.export':
       return asks.surface !== 'none' ? { ok: true } : { ok: false, reason: 'a visible page is required for file dialogs' };
+    case 'transaction.observe':
+      return asks.saves ? {ok: true} : {ok: false, reason: 'the folder did not ask for saves'};
     case 'save':
       return asks.saves ? { ok: true } : { ok: false, reason: 'the folder did not ask for saves' };
     case 'model.call': {
