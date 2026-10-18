@@ -21,7 +21,12 @@ export const ScopedTransactionGrant = z.object({
   policyIdentity: digest,
 }).strict();
 export type ScopedTransactionGrant = z.infer<typeof ScopedTransactionGrant>;
+export const ScopedInvalidation = z.object({grant: ScopedTransactionGrant, target: z.discriminatedUnion('kind', [z.object({kind: z.literal('core')}).strict(), z.object({kind: z.literal('actor'), actor: identity, actorGeneration: identity}).strict()])}).strict();
+export type ScopedInvalidation = z.infer<typeof ScopedInvalidation>;
 const file = z.object({path, sha256: digest}).strict();
+export const ScopedSavedState = z.object({grant: ScopedTransactionGrant, parent: identity, files: z.array(file).max(10000)}).strict().superRefine((value, context) => {if (value.files.some((file, index) => index > 0 && value.files[index - 1]!.path >= file.path)) context.addIssue({code: 'custom', message: 'The complete confirmed tree must have unique ordered paths.'});});
+export type ScopedSavedState = z.infer<typeof ScopedSavedState>;
+
 export const ScopedObservationInput = z.object({
   binding: ScopedActorBinding,
   coreGeneration: identity,

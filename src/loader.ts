@@ -18,7 +18,7 @@ import { refusalError, refusalFields } from './refusal.js';
 
 type Grant = Extract<HostMessage, { type: 'grant' }>;
 type HostRequestType = 'pause' | 'resume' | 'quit' | 'state.read' | 'state.query' | 'state.explain' | 'change.forecast' | 'change.propose' | 'change.apply' | 'change.undo' | 'layout.set' | 'layout.reset';
-type HostEventType = 'corner' | 'display' | 'advance' | 'input' | 'save.request';
+type HostEventType = 'transaction.invalidate' | 'corner' | 'display' | 'advance' | 'input' | 'save.request';
 type HostOf<T extends HostMessage['type']> = Extract<HostMessage, { type: T }>;
 
 export interface Host {
@@ -41,6 +41,8 @@ export interface Host {
   meter(counts: Record<string, number>): void;
   /** Private guarded transaction observation; missing hosts cannot enable scoped play. */
   observeTransaction?(input: ScopedObservationInput): Promise<ScopedObservation>;
+  /** Explicit local UI action, with no caller actor, proposal or file selection. */
+  undoTransaction?(): Promise<unknown>;
   /** One of the folder's own files at the version started from, as base64. */
   read(path: string): Promise<string>;
   /** A file the person picks; resolves with `{ name, mime, data }`, rejects when they cancel. */
@@ -258,6 +260,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
       agent: (text) => request({ type: 'agent.ask', text }).reply,
       decide: (decision, choice) => request({ type: 'agent.decide', decision, choice }).reply,
       meter: (counts) => send({ type: 'meter', counts }),
+      undoTransaction: () => request({type: 'transaction.undo'}).reply,
       observeTransaction: async input => ScopedObservation.parse(await request({type: 'transaction.observe', input}).reply),
       read: async (path) => (await request({ type: 'file.read', path }).reply as { data: string }).data,
       pick: (accept) => request({ type: 'file.pick', accept }).reply as Promise<{ name: string; mime: string; data: string }>,

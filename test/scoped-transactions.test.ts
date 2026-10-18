@@ -1,5 +1,5 @@
 import {expect, it, vi} from 'vitest';
-import {HostBridge, HostMessage, Manifest, ScopedObservation, ScopedObservationInput, type ScopedObservationInput as Input, type Transport} from '../src/index.js';
+import {FolderMessage, HostBridge, HostMessage, Manifest, ScopedSavedState, ScopedObservation, ScopedObservationInput, type ScopedObservationInput as Input, type Transport} from '../src/index.js';
 import {connectCore, connectPage} from '../src/loader.js';
 import {endpointSends} from '../src/endpoints.js';
 const input = (): Input => ({binding: {hostGeneration: 'host-generation', actorGeneration: 'slot-generation', actor: 'actual-sender', purpose: 'player', operationId: 'one-apply', leaseUntil: 3000}, coreGeneration: 'loaded-core', policyIdentity: 'a'.repeat(64), action: 'apply', proposal: 'p1', decision: 'actual-decision', engine: {hash: 'b'.repeat(64), tick: 1, paths: ['state/engine.json', 'state/graph.json']}, outside: [{path: 'manifest.json', sha256: 'c'.repeat(64)}, {path: 'np/reality.json', sha256: 'd'.repeat(64)}]});
@@ -108,4 +108,35 @@ it('blocks fresh mutations after unknown inverse persistence without repeating t
   })).rejects.toThrow('save outcome unknown');
   await expect(h.gate.run(h.authority, operation, async () => {inverses++;})).rejects.toThrow('persisted core reloaded');
   expect(inverses).toBe(1);
+});
+
+it('routes explicit undo as an actor-free private UI action and refuses caller targets', async () => {
+  const [h, f] = pair(), undo = vi.fn(async () => ({undone: 'Arrange the harbor work', tick: 1}));
+  const bridge = new HostBridge(h, asks, {ready: () => {bridge.send(grant);}, transactionUndo: undo}, 100, 'core');
+  const core = await connectCore(f);
+  expect(await core.undoTransaction!()).toEqual({undone: 'Arrange the harbor work', tick: 1});
+  expect(undo).toHaveBeenCalledTimes(1); bridge.close();
+  expect(FolderMessage.safeParse({ew: 1, type: 'transaction.undo', id: 1, actor: 'different-sender'}).success).toBe(false);
+  expect(FolderMessage.safeParse({ew: 1, type: 'transaction.undo', id: 1, proposal: 'foreign'}).success).toBe(false);
+  expect(endpointSends('page', 'transaction.undo')).toBe(false);
+  expect(endpointSends('combined', 'transaction.undo')).toBe(false);
+});
+it('delivers exact actor-generation invalidation only to the private core endpoint', async () => {
+  const [h, f] = pair(), bridge = new HostBridge(h, asks, {ready: () => {bridge.send(grant);}}, 100, 'core');
+  const core = await connectCore(f), loss = vi.fn(); core.on('transaction.invalidate', loss);
+  const invalidation = {grant: grant.scopedTransactions, target: {kind: 'actor' as const, actor: 'actual-sender', actorGeneration: 'slot-generation'}};
+  expect(bridge.send({type: 'transaction.invalidate', invalidation})).toBe(true);
+  await new Promise(resolve => setTimeout(resolve, 0)); expect(loss).toHaveBeenCalledWith({ew: 1, type: 'transaction.invalidate', invalidation}); bridge.close();
+  for (const family of ['page', 'combined'] as const) {
+    const [host] = pair(), b = new HostBridge(host, asks, {}, 100, family);
+    expect(b.send({type: 'transaction.invalidate', invalidation})).toBe(false); b.close();
+  }
+});
+
+it('binds a complete confirmed save tree to its original private core identity', () => {
+  const state = {grant: grant.scopedTransactions, parent: 'confirmed-save', files: [...input().outside]};
+  expect(ScopedSavedState.parse(state)).toEqual(state);
+  expect(ScopedSavedState.safeParse({...state, files: [...state.files, state.files[0]]}).success).toBe(false);
+  expect(ScopedSavedState.safeParse({...state, files: [...state.files].reverse()}).success).toBe(false);
+  expect(ScopedSavedState.safeParse({...state, parent: ''}).success).toBe(false);
 });
