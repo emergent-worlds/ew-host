@@ -10,6 +10,7 @@ import type { z } from 'zod';
 export const StudioRenderDeclaration = StudioValidationDeclaration;
 export type StudioRenderDeclaration = z.infer<typeof StudioRenderDeclaration>;
 export interface StudioRenderInput {
+  readonly uses?: import('./studio-validation.js').StudioSavedInput['uses'];
   readonly selectedEngine?: SelectedEngine;
   readonly selectedComponents?: SelectedComponents;
   readonly componentBindingDigest?: string;

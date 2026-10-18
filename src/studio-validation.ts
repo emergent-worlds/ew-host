@@ -1,3 +1,4 @@
+import {FolderRef} from './manifest.js';
 import {SelectedComponents,componentExecution} from './component-selection.js';
 import {SelectedEngine,type SelectedEngine as EngineSelection} from './engine-selection.js';
 /** S8.4/PV54: declared pure exact-byte validation, distinct from an overall Studio pass. */
@@ -14,7 +15,9 @@ export type StudioValidationDeclaration = z.infer<typeof StudioValidationDeclara
 const Count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 export const StudioSnapshot = z.object({ versionId: z.string().min(1), treeSha256: z.string().regex(/^[0-9a-f]{64}$/) }).strict();
 export const StudioTreeFile = z.object({ path: z.string().refine(safePath), sha256: z.string().regex(/^[0-9a-f]{64}$/), size: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) }).strict();
+const StudioUse=z.object({ref:FolderRef,version:z.string().min(1),kind:z.string().min(1)}).strict();
 export interface StudioSavedInput {
+  readonly uses?: readonly z.infer<typeof StudioUse>[];
   readonly selectedEngine?: EngineSelection;
   readonly selectedComponents?: SelectedComponents;
   readonly componentBindingDigest?: string;
@@ -60,8 +63,9 @@ export function studioSavedInput(declaration: StudioValidationDeclaration, input
     const metadata = byPath.get(path); if (tree && (!metadata || metadata.size !== bytes.byteLength || metadata.sha256 !== sha256(bytes))) throw new Error('selected Studio bytes differ from verified tree metadata');
     selected.set(path, new Uint8Array(bytes));
   }
-  const components=componentExecution(input);
-  return { ...(components?{selectedComponents:components,componentBindingDigest:components.bindingDigest}:{}), snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, ...(tree ? { tree } : {}), ...(input.selectedEngine?{selectedEngine:SelectedEngine.parse(input.selectedEngine)}:{}) };
+  const uses=input.uses?.map(use=>StudioUse.parse(use));
+  const components=componentExecution({...input,uses});
+  return { ...(uses?{uses}:{}), ...(components?{selectedComponents:components,componentBindingDigest:components.bindingDigest}:{}), snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, ...(tree ? { tree } : {}), ...(input.selectedEngine?{selectedEngine:SelectedEngine.parse(input.selectedEngine)}:{}) };
 }
 export function studioValidationInput(declaration: StudioValidationDeclaration, input: StudioValidationInput): StudioValidationInput {
   if (!Number.isSafeInteger(input.requestedTicks) || input.requestedTicks <= 0) throw new Error('invalid validation tick count');

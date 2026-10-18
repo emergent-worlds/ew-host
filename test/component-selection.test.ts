@@ -34,3 +34,10 @@ it('refuses a dropped or contradictory bound execution context without changing 
 });
 
 it('preserves the legacy mark interpretation without explicit component selection',()=>{const f=facts({fits:{[pack]:'^2'}});expect(markFolder(f.root,f.catalog,'computer').mark).toBe('works');expect(markFolder(f.root,f.catalog,'computer',undefined,undefined,selection()).mark).toBe('may work');});
+
+it('clones the verified Studio dependency vector and refuses a missing selected module',()=>{
+ const selected=selection(),uses=[{ref:pack,version:'1.0.0',kind:'pack'},{ref:module,version:'1.0.0',kind:'module'}];
+ const input={snapshot:{versionId:'own-save',treeSha256:'d'.repeat(64)},manifest:{},paths:[],files:new Map(),selectedComponents:selected,componentBindingDigest:selected.bindingDigest,uses};
+ const value=studioSavedInput({module:'check.js',reads:[]},input);uses[1]!.ref='@mercerpress/other';expect(value.uses?.[1]?.ref).toBe(module);
+ expect(()=>studioSavedInput({module:'check.js',reads:[]},input)).toThrow('slot dependency');
+});
