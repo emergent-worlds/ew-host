@@ -3,14 +3,15 @@
  * scope made of an EventTarget, with the core's import in the test's hands. The browsers run
  * it in scripts/worker-check.mjs.
  */
-import { describe, expect, it } from 'vitest';
-import { coreBootstrap } from '../src/start-core.js';
+import { describe, expect, it, vi } from 'vitest';
+import { coreBootstrap, startCore } from '../src/start-core.js';
 
 const CORE = 'http://127.0.0.1:4000/dist/core.js';
 
 /** Runs the bootstrap with `import()` replaced by one the test settles, and timers held. */
 function run() {
-  const scope = new EventTarget();
+  const reports:unknown[]=[];
+  const scope = Object.assign(new EventTarget(),{postMessage:(value:unknown)=>reports.push(value)});
   let settle!: { resolve: () => void; reject: (e: unknown) => void };
   const imported: string[] = [];
   const timers: (() => void)[] = [];
@@ -25,7 +26,7 @@ function run() {
     MessageEvent,
     (f: () => void) => timers.push(f),
   );
-  return { scope, imported, timers, settle: () => settle };
+  return { scope, imported, timers, reports, settle: () => settle };
 }
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
@@ -74,4 +75,25 @@ describe('startCore\'s classic bootstrap (ew-host 0.3.3)', () => {
     scope.dispatchEvent(new MessageEvent('message', { data: 1 }));
     expect(seen).toEqual([1]);
   });
+});
+
+for(const [error,kind] of [[new SyntaxError('invalid code'),'exception'],[new Error('top-level throw'),'exception'],[new TypeError('network or ambiguous code'),'unavailable'],[null,'unavailable']] as const){
+ it(`reports ${kind} before throwing the original import failure`,async()=>{
+  const {settle,reports,timers}=run();settle().reject(error);await flush();
+  expect(reports).toEqual([{ewCoreImportFailure:1,url:CORE,kind}]);expect(timers).toHaveLength(1);
+ });
+}
+
+it('binds the optional report to this worker and exact core URL, once',()=>{
+ const worker=new EventTarget(),reported=vi.fn();
+ vi.stubGlobal('Worker',class {constructor(){return worker;}});vi.stubGlobal('location',{href:'http://127.0.0.1:4000/dist/page.html'});
+ const blob=vi.spyOn(URL,'createObjectURL').mockReturnValue('blob:fixture');
+ try{
+  startCore('./core.js',{onImportFailure:reported});
+  for(const data of [null,{ewCoreImportFailure:1,url:'http://elsewhere/core.js',kind:'exception'},{ewCoreImportFailure:1,url:CORE,kind:'unknown'}])worker.dispatchEvent(new MessageEvent('message',{data}));
+  expect(reported).not.toHaveBeenCalled();
+  worker.dispatchEvent(new MessageEvent('message',{data:{ewCoreImportFailure:1,url:CORE,kind:'exception'}}));
+  worker.dispatchEvent(new MessageEvent('message',{data:{ewCoreImportFailure:1,url:CORE,kind:'unavailable'}}));
+  expect(reported).toHaveBeenCalledExactlyOnceWith({kind:'exception'});
+ }finally{blob.mockRestore();vi.unstubAllGlobals();}
 });

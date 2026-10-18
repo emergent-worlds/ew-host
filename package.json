@@ -1,6 +1,6 @@
 {
   "name": "@emergent-worlds/host",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "The host contract of Emergent Worlds: the manifest, interface, and contract schemas, the message vocabulary between a folder and its host, the resolver of uses, and the compatibility marks.",
   "license": "Apache-2.0",
   "type": "module",

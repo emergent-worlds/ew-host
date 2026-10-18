@@ -127,3 +127,5 @@ Exact component trials additionally carry a bounded component.failed report nami
 Component fit/slot interpretation is enabled only by the explicit component context. Unbound and version1 marks preserve their original behavior. A permanent comparative negative protects this boundary.
 
 0.3.7 R4 Studio consumers retain an optional verified resolved-use vector alongside selected component context. Studio input selection validates and clones it, so copied diagnostic cores can validate exact slot and entry references without rediscovering dependency versions. Existing callers without this vector retain their prior inputs.
+
+0.3.8: `startCore` optionally reports structured import failure before the browser error event, whose original exception is absent in Chromium and WebKit. Known JavaScript exceptions are distinguished from TypeError and unknown load failures; ambiguous failures cannot authorize automatic component undo. The callback is bound to the worker and exact core URL and fires once. Legacy callers retain their worker error event.

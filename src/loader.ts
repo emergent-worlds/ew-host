@@ -55,7 +55,7 @@ const isHandoff = (data: unknown): data is { ewHost: 1 } => (data as { ewHost?: 
 
 // A page starts its core with `startCore(url)`: a classic `blob:` bootstrap that imports the core
 // and holds the page's messages until it listens (src/start-core.ts; the App's requests 4 and 9).
-export { startCore } from './start-core.js';
+export { startCore, type CoreImportFailure } from './start-core.js';
 
 /** Waits for the App to hand this frame its port (a window message whose `ewHost` is 1, from the parent only). */
 export function framePort(timeoutMs = 10_000): Promise<MessagePort> {

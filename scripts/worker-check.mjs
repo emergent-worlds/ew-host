@@ -52,7 +52,7 @@ function start(url) {
     const abs = new URL(url, location.href).href;
     return new Worker(URL.createObjectURL(new Blob(['import ' + JSON.stringify(abs) + ';'], { type: 'text/javascript' })), { type: 'module' });
   }
-  return startCore(url);
+  return startCore(url, { onImportFailure: failure => tell({ step: 'classified', kind: failure.kind }) });
 }
 window.addEventListener('message', (e) => {
   if (e.source !== parent || e.data?.ewHost !== 1 || !e.ports[0]) return;
@@ -106,6 +106,7 @@ setTimeout(() => { result.timeout = true; done(); }, 6000);
 window.addEventListener('message', (e) => {
   if (e.source !== iframe.contentWindow || e.data?.check !== 1) return;
   result.steps.push(e.data.step);
+  if (e.data.step === 'classified') result.classification = e.data.kind;
   if (e.data.step === 'frame') result.frameOrigin = e.data.origin;
   if (e.data.step === 'pack-reply') { result.pack = e.data.reply; if (result.host) done(); }
   if (e.data.step === 'error' || e.data.step === 'construct-threw') { result.error = e.data.message || e.data.step; done(); }
@@ -134,6 +135,8 @@ const frameServer = await listen(async (req, res) => {
     '/frame.js': ['text/javascript', FRAME_JS],
     '/start-core.js': ['text/javascript', START_CORE],
     '/core.js': ['text/javascript', CORE_JS],
+    '/syntax.js': ['text/javascript', 'export const = ;'],
+    '/throw.js': ['text/javascript', "throw new Error('Controlled core exception');"],
     '/uses/engine/dist/names.js': ['text/javascript', NAMES_JS, STATIC_DELAY_MS],
     '/uses/engine/dist/engine.js': ['text/javascript', ENGINE_JS, DYNAMIC_DELAY_MS],
     '/uses/engine/dist/add.wasm': ['application/wasm', ADD_WASM],
@@ -154,7 +157,9 @@ const parentPort = parentServer.address().port;
 
 const CASES = [
   { name: 'startCore, a core that loads', form: 'classic', core: './core.js', expect: 'runs' },
-  { name: 'startCore, a core that does not load', form: 'classic', core: './missing.js', expect: 'error' },
+  { name: 'startCore, a core that does not load', form: 'classic', core: './missing.js', expect: 'error', classification: 'unavailable' },
+  { name: 'startCore, a syntax exception', form: 'classic', core: './syntax.js', expect: 'error', classification: 'exception' },
+  { name: 'startCore, a top-level exception', form: 'classic', core: './throw.js', expect: 'error', classification: 'exception' },
   { name: 'module bootstrap of 0.3.2 (for comparison)', form: 'module', core: './core.js', expect: null },
 ];
 
@@ -179,9 +184,9 @@ for (const name of wanted) {
     const r = await page.evaluate(() => window.__result);
     await page.close();
     const v = verdict(r);
-    const pass = c.expect === null ? null : c.expect === 'runs' ? v.ran && v.line.startsWith('both') : !v.ran && !!r.error;
+    const pass = c.expect === null ? null : c.expect === 'runs' ? v.ran && v.line.startsWith('both') : !v.ran && !!r.error && r.classification === c.classification;
     if (pass === false) failed = true;
-    console.log(`  ${pass === null ? 'info' : pass ? 'pass' : 'FAIL'}  ${c.name}: ${v.line}${r.frameOrigin !== 'null' ? ` (frame origin ${r.frameOrigin})` : ''}`);
+    console.log(`  ${pass === null ? 'info' : pass ? 'pass' : 'FAIL'}  ${c.name}: ${v.line}${c.classification ? `; classification ${r.classification}` : ''}${r.frameOrigin !== 'null' ? ` (frame origin ${r.frameOrigin})` : ''}`);
   }
   await browser.close();
 }
