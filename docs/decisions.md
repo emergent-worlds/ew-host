@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-17: Preserve transitive engine metadata beside an explicit selection
+
+**Decision:** When checking a selected engine, treat other resolved folders with a real engine interface as engines, while checking all pack/module requirements against the selected implementation.
+
+**Alternatives:** Require a pack contract on the retained transitive base engine, or delete that declared dependency from the resolution.
+
+**Rationale:** An explicit direct fork can replace runtime execution while a pack keeps its base dependency. The admitted R4 depth-selection and immutable-binding design preserves that complete graph without inventing a missing-contract incompatibility.
+
 ## 2026-10-17: Carry the host-selected exact engine into execution
 
 **Decision:** Add optional closed SelectedEngine context to core grants and exact-save Studio inputs. It retains the selected immutable version, tree, interface, module and actual forecast capability. Existing input shapes remain valid.

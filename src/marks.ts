@@ -129,6 +129,9 @@ export function markFolder(m: Manifest, catalog: Catalog, device: Device, engine
       }
       for (const [ref, v] of resolved) {
         if (ref === engineRef) continue;
+        // A pack may retain its base engine while a sole direct engine is selected for execution.
+        // Engines expose interfaces; they do not become packs requiring a contract here.
+        if (catalog.manifest(ref, v)?.kind === 'engine' && catalog.engineInterface(ref, v)) continue;
         const c = catalog.contract(ref, v);
         if (!c) {
           mayWork ??= `${ref} states no contract`;
