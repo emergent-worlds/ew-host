@@ -1,3 +1,4 @@
+import {componentExecution,type ComponentFailure} from './component-selection.js';
 export { remotePort } from './remote.js';
 export type { RemotePort, RemotePortOptions } from './remote.js';
 export { HostRefusal, HostRefusalError } from './refusal.js';
@@ -47,6 +48,7 @@ export interface Host {
   /** The person's preferences for this folder, kept per account. */
   prefs(prefs: unknown): Promise<unknown>;
   error(message: string): void;
+  componentFailed(failure:ComponentFailure):void;
 }
 
 const isHandoff = (data: unknown): data is { ewHost: 1 } => (data as { ewHost?: unknown })?.ewHost === PROTOCOL_VERSION;
@@ -120,10 +122,10 @@ export function connectCore(transport: Transport, timeoutMs = 10_000): Promise<C
 
 /** Only per-person display, layout, dialogs, preferences and App surfaces. */
 export function connectPage(transport: Transport, timeoutMs = 10_000): Promise<PageHost> {
-  return connectEndpoint(transport, timeoutMs, 'page').then(({ grant, close, on, handle, pick, exportFile, open, prefs }) => ({ grant, close, on, handle, pick, exportFile, open, prefs }));
+  return connectEndpoint(transport, timeoutMs, 'page').then(({ grant, close, on, handle, pick, exportFile, open, prefs, componentFailed }) => ({ grant, close, on, handle, pick, exportFile, open, prefs, componentFailed }));
 }
 
-export interface PageHost extends Pick<Host, 'grant' | 'close' | 'pick' | 'exportFile' | 'open' | 'prefs'> {
+export interface PageHost extends Pick<Host, 'grant' | 'close' | 'pick' | 'exportFile' | 'open' | 'prefs' | 'componentFailed'> {
   on<T extends 'corner' | 'display'>(type: T, listener: (m: HostOf<T>) => void): () => void;
   handle<T extends 'layout.set' | 'layout.reset'>(type: T, handler: (m: HostOf<T>) => unknown | Promise<unknown>): void;
 }
@@ -194,6 +196,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
             close(new Error(`expected ${family} grant, received ${m.endpoint}`));
             return;
           }
+          try{componentExecution(m);}catch{close(new Error('the exact component execution binding is unavailable'));return;}
           clearTimeout(timer);
           host = makeHost(m);
           return resolve(host);
@@ -258,6 +261,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
       open: (what, detail) => send({ type: 'app.open', what, ...(detail === undefined ? {} : { detail }) }),
       prefs: (prefs) => request({ type: 'prefs.set', prefs }).reply,
       error: (message) => send({ type: 'error', message }),
+      componentFailed:failure=>send({type:'component.failed',failure}),
     };
   }
 }

@@ -1,4 +1,4 @@
-import {SelectedComponents} from './component-selection.js';
+import {SelectedComponents,ComponentFailure} from './component-selection.js';
 import {SelectedEngine} from './engine-selection.js';
 /**
  * The host contract's message vocabulary, version 1 (the files page, Section 5;
@@ -286,6 +286,7 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('app.open'), what: z.enum(['saves', 'copy', 'rate', 'start-from', 'away']), detail: z.string().max(200).optional() }),
   /** The person's preferences for this folder, kept per account across Realities and devices (at most 2 MiB as JSON). */
   z.object({ ...req, type: z.literal('prefs.set'), prefs: z.unknown() }),
+  z.object({ ...base, type:z.literal('component.failed'),failure:ComponentFailure }),
   z.object({ ...base, type: z.literal('error'), message: z.string().max(2000) }),
   /** Answers to the host's requests (pause, resume, state.*, change.*, layout.*). */
   z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional(), code: z.string().min(1).optional(), detail: RefusalDetail.optional() }),

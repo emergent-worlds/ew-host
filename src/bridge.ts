@@ -1,3 +1,4 @@
+import type {ComponentFailure} from './component-selection.js';
 /**
  * The host's side of the contract: one bridge per running folder, over any
  * transport that carries JSON both ways (a MessagePort in the frame, a loopback
@@ -59,6 +60,7 @@ export interface HostHandlers {
   /** The folder asks the App to open one of its own surfaces over the frame (no reply). */
   appOpen?(what: FolderOf<'app.open'>['what'], detail?: string): void;
   error?(message: string): void;
+  componentFailed?(failure:ComponentFailure):void;
   /** A message refused or malformed; the bridge has already answered the folder. */
   refused?(reason: string, raw: unknown): void;
 }
@@ -260,6 +262,7 @@ export class HostBridge {
         return answer(m.id, this.handlers.fileExport && (() => this.handlers.fileExport!(m)));
       case 'prefs.set':
         return answer(m.id, this.handlers.prefsSet && (() => this.handlers.prefsSet!(m.prefs)));
+      case 'component.failed':return this.handlers.componentFailed?.(m.failure);
       case 'error':
         return this.handlers.error?.(m.message);
       case 'reply': {

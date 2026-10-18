@@ -78,3 +78,13 @@ describe('split host endpoints (Wave 3 E7)', () => {
     expect(seen).toEqual(['core', 'page']); cb.close(); pb.close();
   });
 });
+
+it('reports an exact component failure from a page without adding save authority',async()=>{
+ const [ph,pf]=pair(),failed=vi.fn(),save=vi.fn();const bridge=new HostBridge(ph,asks,{ready:()=>bridge.send(grant),componentFailed:failed,save},100,'page');
+ const page=await connectPage(pf);const failure={bindingDigest:'a'.repeat(64),ref:'@ironwrit/salt-harbor',phase:'mount' as const};page.componentFailed(failure);
+ await new Promise(resolve=>setTimeout(resolve,0));expect(failed).toHaveBeenCalledWith(failure);expect('save'in page).toBe(false);expect(save).not.toHaveBeenCalled();bridge.close();
+});
+it('refuses a bound grant whose component context was dropped',async()=>{
+ const [host,folder]=pair();const bridge=new HostBridge(host,asks,{ready:()=>bridge.send({...grant,componentBindingDigest:'a'.repeat(64)})},100,'core');
+ await expect(connectCore(folder)).rejects.toThrow('exact component execution binding');bridge.close();
+});

@@ -25,3 +25,7 @@ export function componentExecution(input:{componentBindingDigest?:string;selecte
  if(input.uses&&selection.entry.ref!==null&&!input.uses.some(use=>use.ref===selection.entry.ref))throw Error('the exact selected entry is unavailable');
  return selection;
 }
+
+/** Reported code failure of an exact selected trial; it grants no save or restoration authority. */
+export const ComponentFailure=z.object({bindingDigest:hash,ref:FolderRef,phase:z.enum(['import','mount','update','startup'])}).strict();
+export type ComponentFailure=z.infer<typeof ComponentFailure>;

@@ -3,9 +3,9 @@ import type { FolderMessage, HostMessage } from './protocol.js';
 
 /** combined is only the existing single-port local connection during consumer migration. */
 export type EndpointFamily = 'combined' | 'core' | 'page';
-const PAGE_OUT = new Set<FolderMessage['type']>(['ready', 'file.pick', 'file.export', 'prefs.set', 'app.open', 'reply']);
+const PAGE_OUT = new Set<FolderMessage['type']>(['component.failed','ready', 'file.pick', 'file.export', 'prefs.set', 'app.open', 'reply']);
 const PAGE_IN = new Set<HostMessage['type']>(['grant', 'corner', 'display', 'layout.set', 'layout.reset', 'reply']);
-const SHARED_OUT = new Set<FolderMessage['type']>(['ready', 'reply']);
+const SHARED_OUT = new Set<FolderMessage['type']>(['component.failed','ready', 'reply']);
 const SHARED_IN = new Set<HostMessage['type']>(['grant', 'display', 'reply']);
 
 export function endpointSends(family: EndpointFamily, type: FolderMessage['type']): boolean {
