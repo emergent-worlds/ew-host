@@ -2,7 +2,7 @@
 
 ## 2026-10-20: Explicit image operation identity and original-only lookup
 
-**Decision:** Add optional UUID requestId and originalOnly to image model requests. Lookup-only requires an explicit identity. These fields select the current account's existing original; they confer no account, session or provider authority. Older callers remain compatible.
+**Decision:** Add optional UUID requestId and originalOnly to image model requests. Lookup-only requires an explicit identity. These fields select the current account's existing original; they confer no account, session or provider authority. Older callers remain compatible. The private core grant advertises imageOriginals only when the host preserves identity and lookup-only semantics; new callers refuse explicit intents when this capability is absent.
 
 **Alternatives:** Generate a new identity on each bridge call, or deduplicate prompts.
 

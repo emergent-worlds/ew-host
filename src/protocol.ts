@@ -190,6 +190,8 @@ export const HostMessage = z.discriminatedUnion('type', [
   z.object({
     ...base,
     type: z.literal('grant'),
+    /** The host preserves caller image UUIDs and supports lookup without generation. */
+    imageOriginals: z.literal(true).optional(),
     /** Connection family; combined is only the transitional local 0.3 connection. */
     endpoint: z.enum(['combined', 'core', 'page']).optional(),
     mode: z.enum(['play', 'away', 'session', 'server', 'installed']).optional(),
