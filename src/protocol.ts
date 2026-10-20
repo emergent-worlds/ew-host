@@ -159,6 +159,9 @@ export const TextModelRequest = z.object({
 });
 export const ImageModelRequest = z.object({
   kind: z.literal('image'),
+  /** Explicit saved caller intent; lookup never repeats generation. */
+  requestId: z.string().uuid().optional(),
+  originalOnly: z.boolean().optional(),
   prompt: z.string().min(1).max(4000),
   /** A style phrase, from the Reality or the person's own (the images module). */
   style: z.string().max(1000).optional(),

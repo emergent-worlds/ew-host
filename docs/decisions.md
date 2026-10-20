@@ -1,5 +1,14 @@
 # Decisions: ew-host
 
+## 2026-10-20: Explicit image operation identity and original-only lookup
+
+**Decision:** Add optional UUID requestId and originalOnly to image model requests. Lookup-only requires an explicit identity. These fields select the current account's existing original; they confer no account, session or provider authority. Older callers remain compatible.
+
+**Alternatives:** Generate a new identity on each bridge call, or deduplicate prompts.
+
+**Rationale:** A caller that durably saved its intent must recover that exact operation without repeating paid dispatch.
+
+
 ## 2026-10-18: Bind scoped transactions to the actual private host operation
 
 **Decision:** Add an optional core-only transaction observation and closed actor/host/core/policy/proposal/decision/tree tuple. A reusable host helper runs within the caller's existing CoreOperations queue, captures authority callbacks, rechecks current authority after awaits and issues one observation. The complete outside tree excludes only enumerated exact Engine-owned paths. Unknown inverse persistence blocks further mutations until original-save recovery or persisted-state reload.
