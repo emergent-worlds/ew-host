@@ -363,3 +363,8 @@ Without the step that stops a held message reaching other listeners, a core list
 **Alternatives.** A protocol per host.
 
 **Rationale.** The same engine and pack run in every place the record names. Recorded from the build V2 plan, approved by the operator on 2026-10-14.
+
+
+### 2026-10-20: Stable saved image intent namespace
+
+The native App supplies only a domain-separated SHA-256 namespace of the current account and Reality folder. It remains stable across session, device and relaunch. The module retains each journal under this namespace; a new copy or account uses a separate namespace without reading, resetting or releasing the old original. This namespace is not permission. The API still checks current original authority. A saved intent with a missing original in the same namespace remains unresolved and never automatically dispatches again. The current server Host grant does not advertise imageOriginals or this namespace, so this native recovery release does not implement server, Studio or away image recovery; previous exact component pins remain available.
