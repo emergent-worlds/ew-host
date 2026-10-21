@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-10-21: Declare exact installed executables beside build prefixes
+
+**Decision.** Add optional `entry.executables` with exactly the installed target set and confined own-tree paths. Preserve prefix strings and declarationless legacy manifests. Bind present declarations to unchanged canonical signed entries, including current/original artifact reuse and original reads.
+
+**Alternatives.** A deployment-wide sample filename cannot serve an ordinary creator's layout. Replacing existing prefix strings with target objects would break the prefix contract. Filename guessing would not be an explicit declaration.
+
+**Rationale.** The permanent files record describes any SDK build and names an entry for each system. The same sole High reviewer admitted this additive shape and the backward-compatibility/receipt equality requirements before implementation. Actual qualified execution and ordinary installation remain consumer obligations.
+
 ## 2026-10-20: Explicit image operation identity and original-only lookup
 
 **Decision:** Add optional UUID requestId and originalOnly to image model requests. Lookup-only requires an explicit identity. These fields select the current account's existing original; they confer no account, session or provider authority. Older callers remain compatible. The private core grant advertises imageOriginals only when the host preserves identity and lookup-only semantics; new callers refuse explicit intents when this capability is absent.

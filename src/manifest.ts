@@ -58,6 +58,7 @@ export type Terms = z.infer<typeof Terms>;
 /** A system an installed build can be made for (the files page, Section 4). */
 export const BuildTarget = z.enum(['windows-x64', 'macos-arm64', 'macos-x64', 'linux-x64', 'server']);
 export type BuildTarget = z.infer<typeof BuildTarget>;
+const installedPath=(path:string)=>!!path&&path.length<=512&&/^[\x20-\x7e]+$/.test(path)&&!/[\\:*?"<>|%#]/.test(path)&&path.split('/').every(p=>!!p&&p!=='.'&&p!=='..'&&!/[. ]$/.test(p)&&!/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(p));
 
 /**
  * How a folder runs: a web page the App starts, builds that install on a
@@ -70,8 +71,17 @@ export const Entry = z
     web: z.string().min(1).optional(),
     headless: z.string().min(1).optional(),
     installs: z.record(BuildTarget, z.string().min(1)).optional(),
+    /** Exact own-tree executable for every installed target. Absent retains explicit legacy selection. */
+    executables: z.record(BuildTarget,z.string().min(1)).optional(),
   })
-  .refine((e) => e.web !== undefined || e.installs !== undefined, 'an entry names a web page, builds that install, or both');
+  .refine((e) => e.web !== undefined || e.installs !== undefined, 'an entry names a web page, builds that install, or both')
+  .superRefine((entry,ctx)=>{
+    if(entry.executables===undefined)return;
+    const targets=Object.keys(entry.installs??{}),declared=Object.keys(entry.executables);
+    const prefixes=Object.values(entry.installs??{}),folded=prefixes.map(p=>p.toLowerCase());
+    if(!targets.length||targets.length!==declared.length||targets.some(target=>!Object.hasOwn(entry.executables!,target))||prefixes.some(p=>!installedPath(p))||folded.some((p,i)=>folded.some((q,j)=>i!==j&&(p===q||p.startsWith(q+'/'))))){ctx.addIssue({code:z.ZodIssueCode.custom,path:['executables'],message:'executables name exactly the installed targets with confined non-overlapping prefixes'});return;}
+    for(const [target,path] of Object.entries(entry.executables))if(!installedPath(path)||!path.startsWith(entry.installs![target as BuildTarget]!+'/'))ctx.addIssue({code:z.ZodIssueCode.custom,path:['executables',target],message:'the executable is a confined own-tree path strictly within its exact target prefix'});
+  });
 export type Entry = z.infer<typeof Entry>;
 
 /** A job a folder names for a model call (the files page, Section 5, models). */
