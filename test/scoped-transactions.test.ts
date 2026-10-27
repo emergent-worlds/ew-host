@@ -140,3 +140,19 @@ it('binds a complete confirmed save tree to its original private core identity',
   expect(ScopedSavedState.safeParse({...state, files: [...state.files].reverse()}).success).toBe(false);
   expect(ScopedSavedState.safeParse({...state, parent: ''}).success).toBe(false);
 });
+
+it('marks optional ordinary admission separately and roundtrips acceptance only on the private core', async () => {
+  const offer = {format: 'ew.guarded-core.v1' as const, grant: grant.scopedTransactions, program: {version: {id: 'exact-version', seq: 4}, componentBindingDigest: 'a'.repeat(64), engine: {ref: '@emergentworlds/emergence-engine', versionId: 'engine-version', treeSha256: 'b'.repeat(64), interfaceSha256: 'c'.repeat(64), module: 'dist/engine.js', calls: ['read' as const], forecasts: true}}};
+  const [h, f] = pair(), accepted = vi.fn(async (m: {offer: unknown}) => m.offer);
+  const bridge = new HostBridge(h, asks, {ready: () => {bridge.send({...grant, scopedTransactions: undefined, guardedCore: offer});}, transactionAccept: accepted}, 100, 'core');
+  const core = await connectCore(f);
+  expect(core.grant.scopedTransactions).toBeUndefined(); expect(core.grant.guardedCore).toEqual(offer);
+  expect(await core.acceptGuardedCore!(offer as never)).toEqual(offer); expect(accepted).toHaveBeenCalledOnce(); bridge.close();
+  for (const family of ['page', 'combined'] as const) {
+    const [host, folder] = pair(), invoked = vi.fn(), replies: unknown[] = [];
+    const b = new HostBridge(host, asks, {transactionAccept: invoked}, 100, family);
+    folder.onMessage(message => replies.push(message)); folder.send({ew: 1, type: 'transaction.accept', id: 1, offer});
+    await new Promise(resolve => setTimeout(resolve, 0)); expect(replies).toMatchObject([{ok: false}]); expect(invoked).not.toHaveBeenCalled(); b.close();
+  }
+  for (const bad of [{...offer, format: 'ready'}, {...offer, grant: {...offer.grant, coreGeneration: ''}}, {...offer, program: {...offer.program, componentBindingDigest: 'unknown'}}]) expect(HostMessage.safeParse({ew: 1, ...grant, guardedCore: bad}).success).toBe(false);
+});

@@ -1,5 +1,6 @@
 /** Private core/host transaction evidence. These records never grant authority by shape. */
 import {z} from 'zod';
+import {SelectedEngine} from './engine-selection.js';
 const identity = z.string().min(1).max(512);
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
 const path = z.string().min(1).max(512).refine(value => !value.startsWith('/') && !value.split('/').some(part => !part || part === '..' || part === '.'));
@@ -21,6 +22,14 @@ export const ScopedTransactionGrant = z.object({
   policyIdentity: digest,
 }).strict();
 export type ScopedTransactionGrant = z.infer<typeof ScopedTransactionGrant>;
+/** Optional private-core offer. Its distinct marker never upgrades a legacy grant. */
+export const GuardedCoreOffer = z.object({
+  format: z.literal('ew.guarded-core.v1'),
+  grant: ScopedTransactionGrant,
+  program: z.object({version: z.object({id: identity, seq: z.number().int().nonnegative()}).strict(), componentBindingDigest: digest, engine: SelectedEngine}).strict(),
+}).strict();
+export type GuardedCoreOffer = z.infer<typeof GuardedCoreOffer>;
+
 export const ScopedInvalidation = z.object({grant: ScopedTransactionGrant, target: z.discriminatedUnion('kind', [z.object({kind: z.literal('core')}).strict(), z.object({kind: z.literal('actor'), actor: identity, actorGeneration: identity}).strict()])}).strict();
 export type ScopedInvalidation = z.infer<typeof ScopedInvalidation>;
 const file = z.object({path, sha256: digest}).strict();

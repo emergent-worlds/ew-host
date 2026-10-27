@@ -1,4 +1,4 @@
-import {ScopedObservation, type ScopedObservationInput} from './scoped-transactions.js';
+import {GuardedCoreOffer, ScopedObservation, type ScopedObservationInput} from './scoped-transactions.js';
 import {componentExecution,type ComponentFailure} from './component-selection.js';
 export { remotePort } from './remote.js';
 export type { RemotePort, RemotePortOptions } from './remote.js';
@@ -40,6 +40,7 @@ export interface Host {
   decide(decision: string, choice: string): Promise<unknown>;
   meter(counts: Record<string, number>): void;
   /** Private guarded transaction observation; missing hosts cannot enable scoped play. */
+  acceptGuardedCore?(offer: GuardedCoreOffer): Promise<GuardedCoreOffer>;
   observeTransaction?(input: ScopedObservationInput): Promise<ScopedObservation>;
   /** Explicit local UI action, with no caller actor, proposal or file selection. */
   undoTransaction?(): Promise<unknown>;
@@ -260,6 +261,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
       agent: (text) => request({ type: 'agent.ask', text }).reply,
       decide: (decision, choice) => request({ type: 'agent.decide', decision, choice }).reply,
       meter: (counts) => send({ type: 'meter', counts }),
+      acceptGuardedCore: async offer => GuardedCoreOffer.parse(await request({type: 'transaction.accept', offer}).reply),
       undoTransaction: () => request({type: 'transaction.undo'}).reply,
       observeTransaction: async input => ScopedObservation.parse(await request({type: 'transaction.observe', input}).reply),
       read: async (path) => (await request({ type: 'file.read', path }).reply as { data: string }).data,

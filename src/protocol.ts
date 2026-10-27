@@ -1,4 +1,4 @@
-import {ScopedActorBinding, ScopedTransactionGrant, ScopedObservationInput, ScopedInvalidation} from './scoped-transactions.js';
+import {GuardedCoreOffer, ScopedActorBinding, ScopedTransactionGrant, ScopedObservationInput, ScopedInvalidation} from './scoped-transactions.js';
 import {SelectedComponents,ComponentFailure} from './component-selection.js';
 import {SelectedEngine} from './engine-selection.js';
 /**
@@ -216,6 +216,8 @@ export const HostMessage = z.discriminatedUnion('type', [
     selectedEngine: SelectedEngine.optional(),
     /** Trusted host capability on the private core endpoint; absent hosts remain unchanged. */
     scopedTransactions: ScopedTransactionGrant.optional(),
+    /** Offered only to the resolved private core; guarded requests remain unavailable until exact acceptance. */
+    guardedCore: GuardedCoreOffer.optional(),
     selectedComponents: SelectedComponents.optional(),
     componentBindingDigest: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     /** The person's stored preferences for this folder, held per account across Realities and devices (D30). */
@@ -261,6 +263,7 @@ export type HostMessageIn = z.input<typeof HostMessage>;
 /* ---------- From the folder to the host ---------- */
 
 export const FolderMessage = z.discriminatedUnion('type', [
+  z.object({...req, type: z.literal('transaction.accept'), offer: GuardedCoreOffer}).strict(),
   z.object({...req, type: z.literal('transaction.observe'), input: ScopedObservationInput}).strict(),
   /** A local explicit UI action; the host derives the actor and original undo ledger. */
   z.object({...req, type: z.literal('transaction.undo')}).strict(),
@@ -334,6 +337,7 @@ export function permitted(msg: FolderMessage, asks: z.infer<typeof Asks>): { ok:
       return asks.surface !== 'none' ? { ok: true } : { ok: false, reason: 'a visible page is required for file dialogs' };
     case 'transaction.undo':
       return asks.saves && asks.agent === 'change' ? {ok: true} : {ok: false, reason: 'the folder did not ask for saved agent changes'};
+    case 'transaction.accept':
     case 'transaction.observe':
       return asks.saves ? {ok: true} : {ok: false, reason: 'the folder did not ask for saves'};
     case 'save':
