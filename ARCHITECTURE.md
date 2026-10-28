@@ -147,3 +147,7 @@ Studio authoring ports are private executor-installed functions, not saved input
 ## Optional ordinary private-core admission
 
 The S12/F3.43 continuation adds `guardedCore` with the distinct `ew.guarded-core.v1` marker, one fresh transaction grant and the exact resolved version, component binding and selected Engine. `transaction.accept` is private-core-only; the legacy `scopedTransactions` grant remains separate. An exact acceptance transports participation only after the consumer proves and installs its actual Engine guards. Hosts own one-time, current-generation admission and the existing save/authority ledger. Protocol1 readiness, method names and release versions confer no guarded capability. Existing page, combined and installed peers acquire no new permission. Controlled contract checks establish message and endpoint behavior; native exact-card acceptance is separate.
+
+## Optional away narration originals
+
+The optional `awayNarrationOriginals` grant and text `awayOriginal` metadata distinguish free server preparation, the first dispatch after a confirmed saved intent, and read-only original recovery. Older requests and grants retain their existing shape. The capability is explicit and gives no additional job or page authority; consumers must use a prepared original, current host-derived saved source and the Platform's current authorization. Missing capability cannot authorize replay of an earlier untracked narration. Source protocol acceptance does not establish consumer installation or native recovery.

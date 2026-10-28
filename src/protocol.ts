@@ -151,6 +151,8 @@ export type Proposal = z.infer<typeof Proposal>;
 
 export const TextModelRequest = z.object({
   kind: z.literal('text').default('text'),
+  /** Saved away-recap intent. A retained intent is recovered without another dispatch. */
+  awayOriginal: z.union([z.object({prepare:z.literal(true)}).strict(),z.object({requestId:z.string().uuid(),sourceVersion:z.string().min(1).optional(),originalOnly:z.boolean().optional()}).strict()]).optional(),
   system: z.string().optional(),
   messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() })).min(1),
   maxTokens: z.number().int().positive().max(64000).optional(),
@@ -192,6 +194,7 @@ export const HostMessage = z.discriminatedUnion('type', [
     type: z.literal('grant'),
     /** The host preserves caller image UUIDs and supports lookup without generation. */
     imageOriginals: z.literal(true).optional(),
+    awayNarrationOriginals: z.literal(true).optional(),
     imageIntentScope: z.string().regex(/^[0-9a-f]{64}$/).optional(),
     /** Connection family; combined is only the transitional local 0.3 connection. */
     endpoint: z.enum(['combined', 'core', 'page']).optional(),
