@@ -9,6 +9,7 @@ const SHARED_OUT = new Set<FolderMessage['type']>(['component.failed','ready', '
 const SHARED_IN = new Set<HostMessage['type']>(['grant', 'display', 'reply']);
 
 export function endpointSends(family: EndpointFamily, type: FolderMessage['type']): boolean {
+  if (type === 'mechanic.read') return family === 'core';
   if (type === 'transaction.accept' || type === 'transaction.observe' || type === 'transaction.undo') return family === 'core';
   return family === 'combined' || (family === 'page' ? PAGE_OUT.has(type) : !PAGE_OUT.has(type) || SHARED_OUT.has(type));
 }

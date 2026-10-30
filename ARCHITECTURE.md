@@ -151,3 +151,21 @@ The S12/F3.43 continuation adds `guardedCore` with the distinct `ew.guarded-core
 ## Optional away narration originals
 
 The optional `awayNarrationOriginals` grant and text `awayOriginal` metadata distinguish free server preparation, the first dispatch after a confirmed saved intent, and read-only original recovery. Older requests and grants retain their existing shape. The capability is explicit and gives no additional job or page authority; consumers must use a prepared original, current host-derived saved source and the Platform's current authorization. Missing capability cannot authorize replay of an earlier untracked narration. Source protocol acceptance does not establish consumer installation or native recovery.
+
+## Original D1 mechanic source candidate
+
+The additive source candidate defines core-only `mechanic.read`, separate from
+own `file.read`. Its strict source tuple pins a selected module's ref, semantic
+version, immutable version id, tree digest, path and byte hash.
+`mechanicSourceReader` snapshots an already verified dependency catalogue and
+returns only exact checked wasm bytes. It grants no ambient path read or file
+listing; page and combined endpoints refuse. The editing core's existing empty
+`uses` grant need not expand for the first source proposal.
+
+Copied Studio inputs may carry separately cloned `mechanicSources` from those
+verified module trees, without mixing them into the own-file inventory.
+`mechanicSourcesInState` extracts only exact saved mechanic declarations.
+Engine, App and Server consumers are recorded in
+[the Engine candidate contract](../emergence-engine/docs/wasm-mechanics.md).
+Shared installed dependency/dist bytes and public versions are unchanged; final
+integration, package delivery and installed target acceptance are pending.

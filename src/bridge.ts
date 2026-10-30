@@ -58,6 +58,7 @@ export interface HostHandlers {
   meter?(counts: Record<string, number>): void;
   /** Resolves `{ data }`, base64, for a path of the folder's tree at the version started from. */
   fileRead?(path: string): Promise<unknown>;
+  mechanicRead?(source: FolderOf<'mechanic.read'>['source']): Promise<unknown>;
   filePick?(accept: string[]): Promise<unknown>;
   fileExport?(m: FolderOf<'file.export'>): Promise<unknown>;
   prefsSet?(prefs: unknown): Promise<unknown>;
@@ -266,6 +267,8 @@ export class HostBridge {
         return this.handlers.meter?.(m.counts);
       case 'file.read':
         return answer(m.id, this.handlers.fileRead && (() => this.handlers.fileRead!(m.path)));
+      case 'mechanic.read':
+        return answer(m.id, this.handlers.mechanicRead && (() => this.handlers.mechanicRead!(m.source)));
       case 'file.pick':
         return answer(m.id, this.handlers.filePick && (() => this.handlers.filePick!(m.accept)));
       case 'file.export':

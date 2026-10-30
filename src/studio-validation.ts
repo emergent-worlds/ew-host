@@ -5,6 +5,7 @@ import {SelectedEngine,type SelectedEngine as EngineSelection} from './engine-se
 import { z } from 'zod';
 import { portablePath } from './builds.js';
 import { sha256 } from './sha256.js';
+import {MechanicSource, type MechanicSourceBytes} from './mechanic-source.js';
 const safePath = (path: string) => portablePath(path) && !/[%#]/.test(path);
 const OwnRead = z.string().min(1).max(512).refine(path => safePath(path.endsWith('/') ? path.slice(0, -1) : path) && path.split('/')[0]!.toLowerCase() !== 'uses', 'an exact own-file path or trailing-slash prefix');
 export const StudioValidationDeclaration = z.object({
@@ -17,6 +18,8 @@ export const StudioSnapshot = z.object({ versionId: z.string().min(1), treeSha25
 export const StudioTreeFile = z.object({ path: z.string().refine(safePath), sha256: z.string().regex(/^[0-9a-f]{64}$/), size: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER) }).strict();
 const StudioUse=z.object({ref:FolderRef,version:z.string().min(1),kind:z.string().min(1)}).strict();
 export interface StudioSavedInput {
+  /** Exact selected module wasm, verified by the trusted immutable-tree caller. */
+  readonly mechanicSources?: readonly MechanicSourceBytes[];
   readonly uses?: readonly z.infer<typeof StudioUse>[];
   readonly selectedEngine?: EngineSelection;
   readonly selectedComponents?: SelectedComponents;
@@ -65,7 +68,13 @@ export function studioSavedInput(declaration: StudioValidationDeclaration, input
   }
   const uses=input.uses?.map(use=>StudioUse.parse(use));
   const components=componentExecution({...input,uses});
-  return { ...(uses?{uses}:{}), ...(components?{selectedComponents:components,componentBindingDigest:components.bindingDigest}:{}), snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, ...(tree ? { tree } : {}), ...(input.selectedEngine?{selectedEngine:SelectedEngine.parse(input.selectedEngine)}:{}) };
+  const mechanicSources = input.mechanicSources?.map(item => {
+    const source = MechanicSource.parse(item.source);
+    if (!uses?.some(use => use.ref === source.ref && use.version === source.version && use.kind === 'module') || item.bytes.byteLength > 65536 || sha256(item.bytes) !== source.sha256) throw new Error('invalid selected mechanic source');
+    return {source,bytes:new Uint8Array(item.bytes)};
+  });
+  if (mechanicSources && new Set(mechanicSources.map(item => `${item.source.ref}:${item.source.path}`)).size !== mechanicSources.length) throw new Error('duplicate selected mechanic source');
+  return { ...(mechanicSources?{mechanicSources}:{}), ...(uses?{uses}:{}), ...(components?{selectedComponents:components,componentBindingDigest:components.bindingDigest}:{}), snapshot, manifest: structuredClone(input.manifest), paths: [...input.paths], files: selected, ...(tree ? { tree } : {}), ...(input.selectedEngine?{selectedEngine:SelectedEngine.parse(input.selectedEngine)}:{}) };
 }
 export function studioValidationInput(declaration: StudioValidationDeclaration, input: StudioValidationInput): StudioValidationInput {
   if (!Number.isSafeInteger(input.requestedTicks) || input.requestedTicks <= 0) throw new Error('invalid validation tick count');

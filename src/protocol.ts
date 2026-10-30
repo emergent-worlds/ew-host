@@ -1,6 +1,7 @@
 import {GuardedCoreOffer, ScopedActorBinding, ScopedTransactionGrant, ScopedObservationInput, ScopedInvalidation} from './scoped-transactions.js';
 import {SelectedComponents,ComponentFailure} from './component-selection.js';
 import {SelectedEngine} from './engine-selection.js';
+import {MechanicSource} from './mechanic-source.js';
 /**
  * The host contract's message vocabulary, version 1 (the files page, Section 5;
  * the plan, Section 3.2; the wave 2 design, D8 to D11). One vocabulary over three
@@ -294,6 +295,8 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('meter'), counts: z.record(z.string().regex(/^[a-z][a-z0-9_.]{0,63}$/), z.number().int().nonnegative()) }),
   /** One of the folder's own files, from the version started from (D8); the reply carries base64 `data`. */
   z.object({ ...req, type: z.literal('file.read'), path: FolderPath }),
+  /** Exact wasm from a selected immutable module; private core only. */
+  z.object({ ...req, type: z.literal('mechanic.read'), source: MechanicSource }).strict(),
   /** A file the person chooses, through the dialog on a computer and the photo library on a phone; the reply is `{ name, mime, data }` or a refusal. */
   z.object({ ...req, type: z.literal('file.pick'), accept: z.array(z.string().min(1)).min(1) }),
   /** A file the person exports; the App saves it through the dialog on a computer and the share sheet on a phone. */
