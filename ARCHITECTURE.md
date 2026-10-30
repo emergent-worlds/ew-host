@@ -169,3 +169,9 @@ Engine, App and Server consumers are recorded in
 [the Engine candidate contract](../emergence-engine/docs/wasm-mechanics.md).
 Shared installed dependency/dist bytes and public versions are unchanged; final
 integration, package delivery and installed target acceptance are pending.
+
+The unpublished0.3.14 candidate additionally accepts selected module ref/path
+requests with optional expected SHA-256. mechanicSourceReader canonicalizes
+these only against its captured selected immutable snapshot and always returns
+the full source tuple. The prior full-tuple request remains compatible. This
+provides ordinary authoring input, not catalogue listing or ambient reads.

@@ -1,6 +1,6 @@
 import {GuardedCoreOffer, ScopedObservation, type ScopedObservationInput} from './scoped-transactions.js';
 import {componentExecution,type ComponentFailure} from './component-selection.js';
-import {MechanicSource, type MechanicSource as Source} from './mechanic-source.js';
+import {MechanicSource, MechanicSourceRequest, type MechanicSource as Source, type MechanicSourceRequest as SourceRequest} from './mechanic-source.js';
 export { remotePort } from './remote.js';
 export type { RemotePort, RemotePortOptions } from './remote.js';
 export { HostRefusal, HostRefusalError } from './refusal.js';
@@ -48,7 +48,7 @@ export interface Host {
   /** One of the folder's own files at the version started from, as base64. */
   read(path: string): Promise<string>;
   /** Exact selected module bytes, returned as base64; absent on older hosts. */
-  mechanicRead?(source: Source): Promise<{ source: Source; data: string }>;
+  mechanicRead?(source: SourceRequest): Promise<{ source: Source; data: string }>;
   /** A file the person picks; resolves with `{ name, mime, data }`, rejects when they cancel. */
   pick(accept: string[]): Promise<{ name: string; mime: string; data: string }>;
   exportFile(name: string, mime: string, data: string): Promise<unknown>;
@@ -269,10 +269,11 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
       observeTransaction: async input => ScopedObservation.parse(await request({type: 'transaction.observe', input}).reply),
       read: async (path) => (await request({ type: 'file.read', path }).reply as { data: string }).data,
       mechanicRead: async source => {
-        const reply = await request({ type: 'mechanic.read', source: MechanicSource.parse(source) }).reply as {source:unknown;data:unknown};
+        const selected = MechanicSourceRequest.parse(source);
+        const reply = await request({ type: 'mechanic.read', source: selected }).reply as {source:unknown;data:unknown};
         if (!reply || typeof reply.data !== 'string') throw new Error('invalid mechanic source reply');
         const checked = MechanicSource.parse(reply.source);
-        if (JSON.stringify(checked) !== JSON.stringify(MechanicSource.parse(source))) throw new Error('the mechanic source reply changed its identity');
+        if (checked.ref !== selected.ref || checked.path !== selected.path || selected.sha256 !== undefined && checked.sha256 !== selected.sha256 || 'versionId' in selected && JSON.stringify(checked) !== JSON.stringify(selected)) throw new Error('the mechanic source reply changed its identity');
         return {source:checked,data:reply.data};
       },
       pick: (accept) => request({ type: 'file.pick', accept }).reply as Promise<{ name: string; mime: string; data: string }>,

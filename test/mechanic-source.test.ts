@@ -18,6 +18,14 @@ describe('exact selected wasm source adapter', () => {
     for (const patch of [{ref:'@ironwrit/other'}, {version:'1.0.1'}, {versionId:'module-v2'}, {treeSha256:'f'.repeat(64)}, {path:'absent.wasm'}, {sha256:'f'.repeat(64)}, {path:'../private.wasm'}, {path:'/private.wasm'}, {path:'uses/@ironwrit/x.wasm'}]) await expect(read({...request,...patch})).rejects.toThrow();
     expect(calls).toBe(1);
   });
+  it('canonicalizes ordinary ref/path input only from the selected immutable snapshot', async () => {
+    let calls=0;
+    const read=mechanicSourceReader([module],async()=>{calls++;return bytes;});
+    expect((await read({ref:request.ref,path:request.path})).source).toEqual(request);
+    expect((await read({ref:request.ref,path:request.path,sha256:request.sha256})).source).toEqual(request);
+    for(const patch of [{ref:'@ironwrit/other'},{path:'missing.wasm'},{sha256:'f'.repeat(64)},{versionId:'invented'}])await expect(read({ref:request.ref,path:request.path,...patch})).rejects.toThrow();
+    expect(calls).toBe(2);
+  });
   it('refuses corrupt bytes, nonmodules and a corrupt or ambiguous selected tree', async () => {
     await expect(mechanicSourceReader([module],async()=>new Uint8Array([9]))(request)).rejects.toThrow(/bytes/);
     for (const modules of [[{...module,kind:'pack'}],[module,module],[{...module,files:[]}],[{...module,files:[...files,...files]}]]) await expect(mechanicSourceReader(modules,async()=>bytes)(request)).rejects.toThrow();
