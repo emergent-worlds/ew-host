@@ -12,10 +12,10 @@ export { HostRefusal, HostRefusalError } from './refusal.js';
  * worker (`framePort`, `workerPort`), and elsewhere over any transport (the hidden
  * runner, a server). The same core runs in every place (the wave 2 design, D4).
  */
-import { FolderMessage, HostMessage, PROTOCOL_VERSION, type ModelRequestIn, type SaveReason, type SavedFile } from './protocol.js';
+import { FolderMessage, HostMessage, PersonTextCheckResult, PROTOCOL_VERSION, type ModelRequestIn, type SaveReason, type SavedFile } from './protocol.js';
 import type { Transport } from './bridge.js';
 import { endpointReceives, endpointSends, type EndpointFamily } from './endpoints.js';
-import { refusalError, refusalFields } from './refusal.js';
+import { HostRefusal, refusalError, refusalFields } from './refusal.js';
 
 type Grant = Extract<HostMessage, { type: 'grant' }>;
 type HostRequestType = 'pause' | 'resume' | 'quit' | 'state.read' | 'state.query' | 'state.explain' | 'change.forecast' | 'change.propose' | 'change.apply' | 'change.undo' | 'layout.set' | 'layout.reset';
@@ -141,9 +141,13 @@ export interface PageHost extends Pick<Host, 'grant' | 'close' | 'pick' | 'expor
 export interface CoreHost extends Omit<Host, 'pick' | 'exportFile' | 'open' | 'prefs' | 'on' | 'handle'> {
   on<T extends Exclude<HostEventType, 'corner'>>(type: T, listener: (m: HostOf<T>) => void): () => void;
   handle<T extends Exclude<HostRequestType, 'layout.set' | 'layout.reset'>>(type: T, handler: (m: HostOf<T>) => unknown | Promise<unknown>): void;
+  /** Available only with an explicit private core grant. Cancel the check with its request id. */
+  checkPersonText?(text: string): { id: number; reply: Promise<PersonTextCheckResult> };
 }
 
-function connectEndpoint(transport: Transport, timeoutMs: number, family: EndpointFamily): Promise<Host> {
+type EndpointHost = Host & Pick<CoreHost, 'checkPersonText'>;
+
+function connectEndpoint(transport: Transport, timeoutMs: number, family: EndpointFamily): Promise<EndpointHost> {
   let nextId = 1;
   const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; onPart?: (index: number, text: string) => void }>();
   const listeners = new Map<string, Set<(m: never) => void>>();
@@ -189,7 +193,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
   return new Promise((resolve, reject) => {
     rejectConnect = reject;
     timer = setTimeout(() => close(new Error('the host sent no grant')), timeoutMs);
-    let host: Host | undefined;
+    let host: EndpointHost | undefined;
     try {
       const unlisten = transport.onMessage(async (raw) => {
         if (closed) return;
@@ -242,7 +246,7 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
     } catch (error) { close(error instanceof Error ? error : new Error('transport send failed')); }
   });
 
-  function makeHost(grant: Grant): Host {
+  function makeHost(grant: Grant): EndpointHost {
     return {
       grant,
       close: () => close(),
@@ -259,6 +263,19 @@ function connectEndpoint(transport: Transport, timeoutMs: number, family: Endpoi
       status: (line) => send({ type: 'status', line }),
       save: (reason, files, name) => request({ type: 'save', reason, files, ...(name === undefined ? {} : { name }) }).reply,
       model: (job, req, onPart) => request({ type: 'model.call', job, request: req }, onPart),
+      ...(family === 'core' && grant.personTextCheck ? { checkPersonText(text: string) {
+        const { id, reply } = request({ type: 'person.check', text });
+        return { id, reply: reply.then(raw => {
+          const result = PersonTextCheckResult.safeParse(raw);
+          if (!result.success) throw new HostRefusal('person_check_unavailable', 'The submitted text could not be checked.');
+          return result.data;
+        }, error => {
+          if (error instanceof HostRefusal && error.code === 'cancelled') {
+            throw new HostRefusal('cancelled', 'The text check was cancelled.');
+          }
+          throw new HostRefusal('person_check_unavailable', 'The submitted text could not be checked.');
+        }) };
+      } } : {}),
       cancel: (id) => send({ type: 'cancel', id }),
       event: (level, text) => send({ type: 'event', level, text }),
       agent: (text) => request({ type: 'agent.ask', text }).reply,
