@@ -158,6 +158,10 @@
                 ]
               }
             },
+            "playerProjection": {
+              "type": "string",
+              "const": "ew.remote-player.v1"
+            },
             "executables": {
               "type": "object",
               "additionalProperties": {
