@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-11-10 Private game projection for remote play
+
+**Decision.** Add a versioned projection service on a separate private folder port. A game declares its callable methods and inputs and produces bounded snapshots and sender-specific notices. The server supplies the admitted public identity.
+
+**Alternatives.** Relaying the general core port would expose unrelated operations. Making the Server parse each game's projection would couple admission to individual games.
+
+**Rationale.** E7 and E8 separate the page, its game projection and the privileged host contract. The existing player transport can carry a game-authored projection while the Server keeps admission and delivery authority.
+
 ## 2026-10-21: Declare exact installed executables beside build prefixes
 
 **Decision.** Add optional `entry.executables` with exactly the installed target set and confined own-tree paths. Preserve prefix strings and declarationless legacy manifests. Bind present declarations to unchanged canonical signed entries, including current/original artifact reuse and original reads.
