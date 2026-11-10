@@ -222,6 +222,8 @@ export const HostMessage = z.discriminatedUnion('type', [
     scopedTransactions: ScopedTransactionGrant.optional(),
     /** Offered only to the resolved private core; guarded requests remain unavailable until exact acceptance. */
     guardedCore: GuardedCoreOffer.optional(),
+    /** The host can check a person's exact submitted text on its private core endpoint. */
+    personTextCheck: z.literal(true).optional(),
     selectedComponents: SelectedComponents.optional(),
     componentBindingDigest: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     /** The person's stored preferences for this folder, held per account across Realities and devices (D30). */
@@ -266,6 +268,15 @@ export type HostMessageIn = z.input<typeof HostMessage>;
 
 /* ---------- From the folder to the host ---------- */
 
+const CheckCode = z.string().regex(/^[a-z][a-z0-9_]{0,63}$/);
+export const PersonTextCheckResult = z.object({
+  verdict: z.enum(['allow', 'review', 'block']),
+  categories: z.array(CheckCode).max(32),
+  notices: z.array(CheckCode).max(16),
+}).strict().refine(result => result.verdict === 'block' ||
+  !result.categories.some(code => code === 'classifier_unavailable' || code === 'sexual_minors'));
+export type PersonTextCheckResult = z.infer<typeof PersonTextCheckResult>;
+
 export const FolderMessage = z.discriminatedUnion('type', [
   z.object({...req, type: z.literal('transaction.accept'), offer: GuardedCoreOffer}).strict(),
   z.object({...req, type: z.literal('transaction.observe'), input: ScopedObservationInput}).strict(),
@@ -283,7 +294,9 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('save'), reason: SaveReason, files: z.array(SavedFile).max(10000), name: z.string().max(80).optional() }),
   /** A model call for a job the folder names; the host resolves the job's model and routes the call by that job's route (plan compute or the person's own key). */
   z.object({ ...req, type: z.literal('model.call'), job: z.string().min(1), request: ModelRequest }),
-  /** Withdraw a request of the folder's own that is still pending (a model call); the host answers it `ok: false`. */
+  /** Checks the literal line before the core renders or saves it. */
+  z.object({ ...req, type: z.literal('person.check'), text: z.string().min(1).max(20000).refine(text => !!text.trim()) }).strict(),
+  /** Withdraw a pending model or person-text check; the host answers it `ok: false`. */
   z.object({ ...base, type: z.literal('cancel'), id: z.number().int().nonnegative() }),
   /** An event the Reality marks; at or above the owner's interrupt level it pauses running while away (PV23). */
   z.object({ ...base, type: z.literal('event'), level: z.enum(['minor', 'notable', 'major']), text: z.string().max(500) }),

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { HostBridge, HostMessage, Manifest, type Transport } from '../src/index.js';
-import { connectCore, connectPage } from '../src/loader.js';
+import { HostBridge, HostMessage, Manifest, type PersonTextCheckResult, type Transport } from '../src/index.js';
+import { connect, connectCore, connectPage } from '../src/loader.js';
 
 function pair(): [Transport, Transport] {
   const listeners = [new Set<(m: unknown) => void>(), new Set<(m: unknown) => void>()];
@@ -76,6 +76,84 @@ describe('split host endpoints (Wave 3 E7)', () => {
     await expect(cb.request({ type: 'layout.reset' })).rejects.toThrow('not granted');
     await expect(pb.request({ type: 'layout.reset' })).resolves.toBe('reset');
     expect(seen).toEqual(['core', 'page']); cb.close(); pb.close();
+  });
+});
+
+describe('private person-text checks', () => {
+  const review: PersonTextCheckResult = { verdict: 'review', categories: ['self_harm'], notices: ['help'] };
+
+  it('checks the exact literal only after the core is granted the capability', async () => {
+    const [host, folder] = pair();
+    const personCheck = vi.fn(async () => review);
+    const bridge = new HostBridge(host, asks, { ready: () => bridge.send(grant), personCheck }, 100, 'core');
+    const core = await connectCore(folder);
+    expect(core.grant.personTextCheck).toBe(true);
+    const text = '  You see the tide turn. ';
+    const check = core.checkPersonText!(text);
+    await expect(check.reply).resolves.toEqual(review);
+    expect(personCheck).toHaveBeenCalledWith({ ew: 1, type: 'person.check', id: check.id, text }, expect.any(AbortSignal));
+    bridge.close();
+  });
+
+  it.each(['page', 'combined'] as const)('does not advertise or accept the check on the %s endpoint', async family => {
+    const [host, folder] = pair();
+    const personCheck = vi.fn(async () => review);
+    const refused = vi.fn();
+    const bridge = new HostBridge(host, asks, { ready: () => bridge.send({ ...grant, personTextCheck: true }), personCheck, refused }, 100, family);
+    const endpoint = await (family === 'page' ? connectPage(folder) : connect(folder));
+    expect(endpoint.grant.personTextCheck).toBeUndefined();
+    expect(endpoint).not.toHaveProperty('checkPersonText');
+    const reply = new Promise<unknown>(resolve => folder.onMessage(resolve));
+    folder.send({ ew: 1, type: 'person.check', id: 90, text: 'private synthetic text' });
+    await expect(reply).resolves.toMatchObject({ type: 'reply', reply_to: 90, ok: false, code: 'person_check_unavailable' });
+    expect(personCheck).not.toHaveBeenCalled();
+    expect(refused).toHaveBeenCalledWith(expect.any(String), { type: 'person.check' });
+    bridge.close();
+  });
+
+  it('fails closed without a handler or when a request or response is malformed', async () => {
+    const [oldHost, oldFolder] = pair();
+    const oldBridge = new HostBridge(oldHost, asks, { ready: () => oldBridge.send(grant) }, 100, 'core');
+    const oldCore = await connectCore(oldFolder);
+    expect(oldCore.checkPersonText).toBeUndefined();
+    const noHandler = new Promise<unknown>(resolve => oldFolder.onMessage(resolve));
+    oldFolder.send({ ew: 1, type: 'person.check', id: 91, text: 'a synthetic line' });
+    await expect(noHandler).resolves.toMatchObject({ reply_to: 91, ok: false, code: 'person_check_unavailable' });
+    oldBridge.close();
+
+    const [host, folder] = pair();
+    const refused = vi.fn();
+    const personCheck = vi.fn(async () => ({ ...review, verdict: 'allow' as const, categories: ['classifier_unavailable'] }));
+    const bridge = new HostBridge(host, asks, { ready: () => bridge.send(grant), personCheck, refused }, 100, 'core');
+    const core = await connectCore(folder);
+    const malformed = new Promise<unknown>(resolve => folder.onMessage(resolve));
+    folder.send({ ew: 1, type: 'person.check', id: 92, text: 'a synthetic line', actor: 'untrusted' });
+    await expect(malformed).resolves.toMatchObject({ reply_to: 92, ok: false });
+    expect(refused).toHaveBeenCalledWith('malformed message', { type: 'person.check' });
+    expect(personCheck).not.toHaveBeenCalled();
+    await expect(core.checkPersonText!('a synthetic line').reply).rejects.toMatchObject({ code: 'person_check_unavailable' });
+    bridge.close();
+  });
+
+  it('aborts a check by request id and ignores a late result', async () => {
+    const [host, folder] = pair();
+    let entered!: (signal: AbortSignal) => void;
+    let finish!: (result: PersonTextCheckResult) => void;
+    const started = new Promise<AbortSignal>(resolve => { entered = resolve; });
+    const result = new Promise<PersonTextCheckResult>(resolve => { finish = resolve; });
+    const bridge = new HostBridge(host, asks, { ready: () => bridge.send(grant), personCheck: async (_request, signal) => {
+      entered(signal);
+      return result;
+    } }, 100, 'core');
+    const core = await connectCore(folder);
+    const check = core.checkPersonText!('a synthetic line');
+    const signal = await started;
+    const reply = expect(check.reply).rejects.toMatchObject({ code: 'cancelled' });
+    core.cancel(check.id);
+    await reply;
+    expect(signal.aborted).toBe(true);
+    finish(review);
+    bridge.close();
   });
 });
 

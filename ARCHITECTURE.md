@@ -26,6 +26,8 @@ TypeScript, Zod, JSON Schema. The reasons are in [`docs/decisions.md`](./docs/de
 
 ## Status
 
+MR4.4 person-text check. A private core can call `checkPersonText` when its host advertises a configured `person.check` handler. The request carries the exact submitted text and its cancellable request ID. The host derives authority and returns a normalized verdict, category codes and notices. Page and combined endpoints have no check capability. Refusals contain no submitted text. The product host and core supply authorization and enforce the result before showing or saving text.
+
 The additive0.3.11 installed-entry declaration retains per-target build prefixes and optionally names each exact own-tree executable through `entry.executables`. Exact target-set, portable paths and non-overlapping prefix checks precede execution. Existing declarationless manifests remain compatible; only explicit legacy fixed-entry workers may select their executable. Consumers bind any present declaration to the unchanged signed build list, including both sides of ancestry/copy reuse. Source declaration and mechanism binding do not establish target execution or installed acceptance.
 
 Wave 0, 2026-10-14: the manifest, interface, and contract schemas (`src/manifest.ts`, `src/interface.ts`, emitted as JSON Schema in `schemas/`), the works / may work / won't work marks (`src/marks.ts`), the version 1 message vocabulary with what each ask permits (`src/protocol.ts`), the host's bridge (`src/bridge.ts`), and the folder's loader (`src/loader.ts`), with tests.

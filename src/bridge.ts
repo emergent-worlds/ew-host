@@ -6,9 +6,9 @@ import type {ComponentFailure} from './component-selection.js';
  * refuses any message for an ask the manifest does not make, and correlates
  * requests with their replies.
  */
-import { FolderMessage, HostMessage, PROTOCOL_VERSION, deliverable, permitted, type HostMessageIn, type SaveReason } from './protocol.js';
+import { FolderMessage, HostMessage, PersonTextCheckResult, PROTOCOL_VERSION, deliverable, permitted, type HostMessageIn, type SaveReason } from './protocol.js';
 import type { Asks } from './manifest.js';
-import { refusalError, refusalFields } from './refusal.js';
+import { HostRefusal, refusalError, refusalFields } from './refusal.js';
 import { endpointReceives, endpointSends, type EndpointFamily } from './endpoints.js';
 
 /** The minimum a transport offers. */
@@ -38,6 +38,7 @@ type DOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 type HostOut = DOmit<HostMessageIn, 'ew'>;
 type HostRequest = Extract<HostOut, { id: number }>;
 type FolderOf<T extends FolderMessage['type']> = Extract<FolderMessage, { type: T }>;
+const personCheckUnavailable = () => new HostRefusal('person_check_unavailable', 'The submitted text could not be checked.');
 
 /** What the host does with each kind of folder message. Requests resolve to a reply's result. */
 export interface HostHandlers {
@@ -52,6 +53,8 @@ export interface HostHandlers {
   save?(m: FolderOf<'save'>): Promise<unknown>;
   /** Routes the call; `part` releases a streamed paragraph to the folder before the reply. `signal` is aborted by a `cancel`. */
   modelCall?(m: FolderOf<'model.call'>, part: (index: number, text: string) => void, signal: AbortSignal): Promise<unknown>;
+  /** The host derives the current actor. The core sends only the text being checked. */
+  personCheck?(m: FolderOf<'person.check'>, signal: AbortSignal): Promise<PersonTextCheckResult>;
   event?(m: FolderOf<'event'>): void;
   agentAsk?(m: FolderOf<'agent.ask'>): Promise<unknown>;
   agentDecide?(m: FolderOf<'agent.decide'>): Promise<unknown>;
@@ -79,6 +82,7 @@ export class HostBridge {
   private unsubscribe: () => void;
   private unsubscribeClose: (() => void) | undefined;
   private closed = false;
+  private personTextCheckGranted = false;
 
   constructor(
     private readonly transport: Transport,
@@ -94,11 +98,22 @@ export class HostBridge {
   /** Sends a host message that needs no answer, if the grant allows it. Returns whether it was sent. */
   send(message: Exclude<HostOut, HostRequest>): boolean {
     if (this.closed) return false;
-    const full = { ew: PROTOCOL_VERSION, ...message, ...(message.type === 'grant' ? { endpoint: this.family } : {}) } as HostMessage;
+    const full = { ew: PROTOCOL_VERSION, ...message } as HostMessage;
+    if (full.type === 'grant') {
+      full.endpoint = this.family;
+      delete full.personTextCheck;
+      if (this.family === 'core' && this.handlers.personCheck) full.personTextCheck = true;
+    }
     const parsed = HostMessage.safeParse(full);
     if (!parsed.success) throw new Error(`invalid host message ${message.type}: ${parsed.error.message}`);
     if (!endpointReceives(this.family, parsed.data.type) || !deliverable(parsed.data, this.asks)) return false;
-    this.transport.send(parsed.data);
+    if (parsed.data.type === 'grant') this.personTextCheckGranted = parsed.data.personTextCheck === true;
+    try {
+      this.transport.send(parsed.data);
+    } catch (error) {
+      if (parsed.data.type === 'grant') this.personTextCheckGranted = false;
+      throw error;
+    }
     return true;
   }
 
@@ -184,18 +199,19 @@ export class HostBridge {
 
   private async receive(raw: unknown): Promise<void> {
     if (this.closed) return;
+    const forLog = (raw as { type?: unknown } | null)?.type === 'person.check' ? { type: 'person.check' } : raw;
     const parsed = FolderMessage.safeParse(raw);
     if (!parsed.success) {
       const id = typeof raw === 'object' && raw !== null && typeof (raw as { id?: unknown }).id === 'number' ? (raw as { id: number }).id : undefined;
       if (id !== undefined) this.reply(id, false, undefined, 'malformed message');
-      this.handlers.refused?.('malformed message', raw);
+      this.handlers.refused?.('malformed message', forLog);
       return;
     }
     const m = parsed.data;
     const allowed = endpointSends(this.family, m.type) ? permitted(m, this.asks) : { ok: false as const, reason: `${m.type} is not allowed on the ${this.family} endpoint` };
     if (!allowed.ok) {
-      if ('id' in m) this.reply(m.id, false, undefined, allowed.reason);
-      this.handlers.refused?.(allowed.reason, raw);
+      if ('id' in m) this.reply(m.id, false, undefined, m.type === 'person.check' ? personCheckUnavailable() : allowed.reason);
+      this.handlers.refused?.(allowed.reason, forLog);
       return;
     }
     const answer = async (id: number, work: (() => Promise<unknown>) | undefined) => {
@@ -237,6 +253,7 @@ export class HostBridge {
       }
       case 'model.call': {
         if (!this.handlers.modelCall) return answer(m.id, undefined);
+        if (this.cancels.has(m.id)) return;
         const controller = new AbortController();
         this.cancels.set(m.id, controller);
         const part = (index: number, text: string) => { if (!this.closed) this.transport.send({ ew: PROTOCOL_VERSION, type: 'model.part', reply_to: m.id, index, text }); };
@@ -245,6 +262,31 @@ export class HostBridge {
         } catch (e) {
           this.reply(m.id, false, undefined, controller.signal.aborted ? 'cancelled' : e);
         } finally {
+          this.cancels.delete(m.id);
+        }
+        return;
+      }
+      case 'person.check': {
+        const check = this.handlers.personCheck;
+        if (!this.personTextCheckGranted || !check) return this.reply(m.id, false, undefined, personCheckUnavailable());
+        if (this.cancels.has(m.id)) return;
+        const controller = new AbortController();
+        this.cancels.set(m.id, controller);
+        let timedOut = false;
+        const timer = setTimeout(() => { timedOut = true; controller.abort(); }, this.timeoutMs);
+        const aborted = () => {
+          clearTimeout(timer);
+          this.reply(m.id, false, undefined, timedOut ? personCheckUnavailable() : new HostRefusal('cancelled', 'The text check was cancelled.'));
+        };
+        controller.signal.addEventListener('abort', aborted, { once: true });
+        try {
+          const result = PersonTextCheckResult.parse(await check.call(this.handlers, m, controller.signal));
+          if (!controller.signal.aborted) this.reply(m.id, true, result);
+        } catch {
+          if (!controller.signal.aborted) this.reply(m.id, false, undefined, personCheckUnavailable());
+        } finally {
+          clearTimeout(timer);
+          controller.signal.removeEventListener('abort', aborted);
           this.cancels.delete(m.id);
         }
         return;
