@@ -71,11 +71,15 @@ export const Entry = z
     web: z.string().min(1).optional(),
     headless: z.string().min(1).optional(),
     installs: z.record(BuildTarget, z.string().min(1)).optional(),
+    /** A checked installed server can pair this private protocol with its licensed web page. */
+    playerProjection: z.literal('ew.remote-player.v1').optional(),
     /** Exact own-tree executable for every installed target. Absent retains explicit legacy selection. */
     executables: z.record(BuildTarget,z.string().min(1)).optional(),
   })
   .refine((e) => e.web !== undefined || e.installs !== undefined, 'an entry names a web page, builds that install, or both')
   .superRefine((entry,ctx)=>{
+    if (entry.playerProjection && (!entry.web || !entry.installs?.server))
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['playerProjection'], message: 'installed player projection needs a web page and a server build' });
     if(entry.executables===undefined)return;
     const targets=Object.keys(entry.installs??{}),declared=Object.keys(entry.executables);
     const prefixes=Object.values(entry.installs??{}),folded=prefixes.map(p=>p.toLowerCase());
@@ -148,7 +152,7 @@ export const Manifest = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['asks'], message: 'only a folder that runs (one with an entry, or one that uses a folder with an entry) makes asks' });
     }
     const needsHeadless = m.asks && (m.asks.while_away || m.asks.players > 1);
-    if (needsHeadless && m.entry?.web !== undefined && m.entry.headless === undefined) {
+    if (needsHeadless && m.entry?.web !== undefined && m.entry.headless === undefined && !m.entry.playerProjection) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['entry', 'headless'],

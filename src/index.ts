@@ -12,6 +12,7 @@ export type { PortClient, PortServer } from './port.js';
 export { endpointReceives, endpointSends } from './endpoints.js';
 export type { EndpointFamily } from './endpoints.js';
 export { loopbackTransport, SOCKET_FRAME_BYTES } from './loopback.js';
+export { splitInstalledPlayerTransport } from './installed-player-transport.js';
 export type { LoopbackOptions, SocketLike } from './loopback.js';
 export { workerTransport, WORKER_STARTUP_MESSAGES } from './worker.js';
 export type { NodeWorkerEndpoint, WebWorkerEndpoint } from './worker.js';

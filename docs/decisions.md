@@ -1,5 +1,13 @@
 # Decisions: ew-host
 
+## 2026-11-10 Installed game projection on the admitted local socket
+
+**Decision.** Carry private game projection on the same one-use local socket with a strict `ewPlayerProjection` frame. Keep the existing raw core wire. Projection close preserves the core connection and a core close ends both channels.
+
+**Alternatives.** A second socket would add another authentication and lifetime boundary. Relaying tagged frames to the core would mix projection with saves, models and quit.
+
+**Rationale.** E16 already supplies the authenticated local transport. Separating message families at that boundary preserves ordinary installed lifecycle and keeps guest admission on the Server.
+
 ## 2026-11-10 Private game projection for remote play
 
 **Decision.** Add a versioned projection service on a separate private folder port. A game declares its callable methods and inputs and produces bounded snapshots and sender-specific notices. The server supplies the admitted public identity.
