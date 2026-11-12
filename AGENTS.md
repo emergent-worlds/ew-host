@@ -4,7 +4,16 @@ Guidance for any coding agent working in `ew-host`. Read [`ARCHITECTURE.md`](./A
 
 ## Orientation
 
-Start in the command center (`../command-center/`): read `SYSTEM.md`, then the build V2 cycle, `command-center/operations/founder-product-development/cycles/2026-10-13-build-v2/`, its `README.md` (the log) and `plan.md` (the approved plan). Work in this repository is founder-product-development work and follows the cycle protocol in `command-center/operations/founder-product-development/README.md`; escalation follows `command-center/docs/escalation-and-access.md`.
+Before actionable company work, read the current published [company entry](https://github.com/emergent-worlds/command-center/blob/main/AGENTS.md),
+[system map](https://github.com/emergent-worlds/command-center/blob/main/SYSTEM.md) and [operating manual](https://github.com/emergent-worlds/command-center/blob/main/docs/ticket-and-cycle-conventions.md).
+The manual governs automatic ticket/folder registration, maintenance, completion
+and authorized parent-goal continuation for all agents, including research,
+audits, planning, reviews and delegated tasks. Use its actual ticket and owner
+record for the current request, and preserve existing working branches and paths.
+
+For work already registered to Build V2, follow its current owner record and
+accepted plan through the manual's preserved-cycle registry. Escalation follows
+[the company access and escalation rule](https://github.com/emergent-worlds/command-center/blob/main/docs/escalation-and-access.md).
 
 ## The record leads the code
 
