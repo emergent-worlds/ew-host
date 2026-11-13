@@ -177,10 +177,10 @@ describe('the marks', () => {
 });
 
 /** Two transports joined back to back, as a MessageChannel's two ports are. */
-function pair(): [Transport, Transport] {
+function pair(synchronous = false): [Transport, Transport] {
   const listeners: [((m: unknown) => void)[], ((m: unknown) => void)[]] = [[], []];
   const side = (me: 0 | 1): Transport => ({
-    send: (m) => queueMicrotask(() => listeners[1 - me]!.forEach((l) => l(structuredClone(m)))),
+    send: (m) => { const deliver = () => listeners[1 - me]!.forEach((l) => l(structuredClone(m))); if (synchronous) deliver(); else queueMicrotask(deliver); },
     onMessage: (l) => (listeners[me].push(l), () => void 0),
     close: () => void 0,
   });
@@ -215,6 +215,25 @@ describe('the bridge and the loader', () => {
     await expect(host.model('weather', { kind: 'text', messages: [{ role: 'user', content: 'go' }] }).reply).rejects.toThrow('names no text job weather');
     await expect(host.model('narration', { kind: 'image', prompt: 'the harbor at dawn' }).reply).rejects.toThrow('names no image job narration');
     await expect(host.model('images', { kind: 'image', prompt: 'the harbor at dawn' }).reply).resolves.toEqual({ text: 'the tide turns' });
+  });
+
+  it('observes a save delivered synchronously by a transport (D8)', async () => {
+    const [hostSide, folderSide] = pair(true);
+    const bridge = new HostBridge(hostSide, asks, {
+      ready: () => bridge.send({ type: 'grant', asks, ...grantRest }),
+      save: async () => ({ version: 'saved', seq: 1, at: 'now' }),
+    }, 20);
+    const host = await connect(folderSide);
+    host.on('save.request', (m) => void host.save(m.reason, []));
+    await expect(bridge.requestSave('before-change')).resolves.toEqual({ version: 'saved', seq: 1, at: 'now' });
+    bridge.close();
+  });
+
+  it('rejects a failed save request send without leaving a waiter', async () => {
+    const [hostSide] = pair();
+    const bridge = new HostBridge({ ...hostSide, send() { throw new Error('transport closed'); } }, asks, {}, 20);
+    await expect(bridge.requestSave('before-change')).rejects.toThrow('transport closed');
+    bridge.close();
   });
 
   it('asks for a save and resolves with the committed version once the folder has saved (D8)', async () => {

@@ -1,3 +1,7 @@
+import {GuardedCoreOffer, ScopedActorBinding, ScopedTransactionGrant, ScopedObservationInput, ScopedInvalidation} from './scoped-transactions.js';
+import {SelectedComponents,ComponentFailure} from './component-selection.js';
+import {SelectedEngine} from './engine-selection.js';
+import {MechanicSourceRequest} from './mechanic-source.js';
 /**
  * The host contract's message vocabulary, version 1 (the files page, Section 5;
  * the plan, Section 3.2; the wave 2 design, D8 to D11). One vocabulary over three
@@ -12,6 +16,7 @@
  */
 import { z } from 'zod';
 import { Asks, FolderRef } from './manifest.js';
+import { RefusalDetail } from './refusal.js';
 
 export const PROTOCOL_VERSION = 1 as const;
 
@@ -147,6 +152,8 @@ export type Proposal = z.infer<typeof Proposal>;
 
 export const TextModelRequest = z.object({
   kind: z.literal('text').default('text'),
+  /** Saved away-recap intent. A retained intent is recovered without another dispatch. */
+  awayOriginal: z.union([z.object({prepare:z.literal(true)}).strict(),z.object({requestId:z.string().uuid(),sourceVersion:z.string().min(1).optional(),originalOnly:z.boolean().optional()}).strict()]).optional(),
   system: z.string().optional(),
   messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string() })).min(1),
   maxTokens: z.number().int().positive().max(64000).optional(),
@@ -155,6 +162,9 @@ export const TextModelRequest = z.object({
 });
 export const ImageModelRequest = z.object({
   kind: z.literal('image'),
+  /** Explicit saved caller intent; lookup never repeats generation. */
+  requestId: z.string().uuid().optional(),
+  originalOnly: z.boolean().optional(),
   prompt: z.string().min(1).max(4000),
   /** A style phrase, from the Reality or the person's own (the images module). */
   style: z.string().max(1000).optional(),
@@ -177,10 +187,22 @@ export const ImageModelReply = z.object({ image: z.string(), mime: z.string(), n
 /* ---------- From the host to the folder ---------- */
 
 export const HostMessage = z.discriminatedUnion('type', [
+  /** Delivered host/core or admitted-actor loss; it cannot confer a fresh actor. */
+  z.object({...base, type: z.literal('transaction.invalidate'), invalidation: ScopedInvalidation}).strict(),
   /** The first message: what is granted, where it draws, the account's display settings, and the folder's files. */
   z.object({
     ...base,
     type: z.literal('grant'),
+    /** The host preserves caller image UUIDs and supports lookup without generation. */
+    imageOriginals: z.literal(true).optional(),
+    awayNarrationOriginals: z.literal(true).optional(),
+    imageIntentScope: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+    /** Connection family; combined is only the transitional local 0.3 connection. */
+    endpoint: z.enum(['combined', 'core', 'page']).optional(),
+    mode: z.enum(['play', 'away', 'session', 'server', 'installed']).optional(),
+    players: z.object({ max: z.number().int().min(1).max(10) }).optional(),
+    /** Host-owned recap metadata; null means authoritative compute share is unavailable. */
+    away: z.object({ pace: Pace, computeShare: z.number().min(0).max(100).nullable() }).optional(),
     asks: Asks,
     session: z.string().min(1),
     display: Display,
@@ -194,6 +216,16 @@ export const HostMessage = z.discriminatedUnion('type', [
     files: z.array(TreeFile).max(10000).default([]),
     /** The folders it uses, resolved, as they are laid out under `/uses/<ref>/` on the folder's origin (D6). */
     uses: z.array(z.object({ ref: FolderRef, version: z.string().min(1), kind: z.string() })).default([]),
+    /** Exact engine selected by the host's immutable dependency resolution. */
+    selectedEngine: SelectedEngine.optional(),
+    /** Trusted host capability on the private core endpoint; absent hosts remain unchanged. */
+    scopedTransactions: ScopedTransactionGrant.optional(),
+    /** Offered only to the resolved private core; guarded requests remain unavailable until exact acceptance. */
+    guardedCore: GuardedCoreOffer.optional(),
+    /** The host can check a person's exact submitted text on its private core endpoint. */
+    personTextCheck: z.literal(true).optional(),
+    selectedComponents: SelectedComponents.optional(),
+    componentBindingDigest: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     /** The person's stored preferences for this folder, held per account across Realities and devices (D30). */
     prefs: z.unknown().optional(),
   }),
@@ -203,6 +235,8 @@ export const HostMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('pause') }),
   z.object({ ...req, type: z.literal('resume') }),
   z.object({ ...base, type: z.literal('display'), display: Display }),
+  /** The installed build or server saves and exits (Wave 3 E16). */
+  z.object({ ...req, type: z.literal('quit'), reason: z.string().min(1) }),
   /** Save now, for a reason (PV15). The folder answers with a `save` request of its own, carrying the reason. */
   z.object({ ...base, type: z.literal('save.request'), reason: SaveReason, name: z.string().max(80).optional() }),
   /** Running while away: real time elapsed since the last advance, at the owner's pace (PV23). */
@@ -214,19 +248,19 @@ export const HostMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('state.query'), query: StateQuery }),
   z.object({ ...req, type: z.literal('state.explain'), subject: z.string().min(1) }),
   /** What would happen: a projection that moves nothing and stores no proposal (FE.10). */
-  z.object({ ...req, type: z.literal('change.forecast'), change: Change, horizon: z.number().nonnegative().optional() }),
+  z.object({ ...req, type: z.literal('change.forecast'), scoped: ScopedActorBinding.optional(), change: Change, horizon: z.number().nonnegative().optional() }),
   /** The Reality Agent loop's first half: apply to a copy, check, report; `revises` names an earlier proposal planned again. */
-  z.object({ ...req, type: z.literal('change.propose'), change: Change, revises: z.string().optional() }),
+  z.object({ ...req, type: z.literal('change.propose'), scoped: ScopedActorBinding.optional(), change: Change, revises: z.string().optional() }),
   /** Commit a stored proposal the person approved, or one the approved plan covers during a build (D9). */
-  z.object({ ...req, type: z.literal('change.apply'), proposal: z.string().min(1), approvedBy: z.enum(['person', 'plan']).default('person'), decision: z.string().optional() }),
-  z.object({ ...req, type: z.literal('change.undo') }),
+  z.object({ ...req, type: z.literal('change.apply'), scoped: ScopedActorBinding.optional(), proposal: z.string().min(1), approvedBy: z.enum(['person', 'plan']).default('person'), decision: z.string().optional() }),
+  z.object({ ...req, type: z.literal('change.undo'), scoped: ScopedActorBinding.optional() }),
   /** A person's own layout of the panels and views inside the Reality (the files page, Section 7; S3 F3.42), in the pack's documented form. */
   z.object({ ...req, type: z.literal('layout.set'), layout: z.unknown() }),
   z.object({ ...req, type: z.literal('layout.reset') }),
   /** A paragraph of a streamed model reply, released as it passes the classifier, before the reply closes the call. */
   z.object({ ...base, type: z.literal('model.part'), reply_to: z.number().int(), index: z.number().int().nonnegative(), text: z.string() }),
   /** Answers to the folder's requests. */
-  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional() }),
+  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional(), code: z.string().min(1).optional(), detail: RefusalDetail.optional() }),
 ]);
 export type HostMessage = z.infer<typeof HostMessage>;
 /** What a host writes before the schema fills defaults. */
@@ -234,7 +268,20 @@ export type HostMessageIn = z.input<typeof HostMessage>;
 
 /* ---------- From the folder to the host ---------- */
 
+const CheckCode = z.string().regex(/^[a-z][a-z0-9_]{0,63}$/);
+export const PersonTextCheckResult = z.object({
+  verdict: z.enum(['allow', 'review', 'block']),
+  categories: z.array(CheckCode).max(32),
+  notices: z.array(CheckCode).max(16),
+}).strict().refine(result => result.verdict === 'block' ||
+  !result.categories.some(code => code === 'classifier_unavailable' || code === 'sexual_minors'));
+export type PersonTextCheckResult = z.infer<typeof PersonTextCheckResult>;
+
 export const FolderMessage = z.discriminatedUnion('type', [
+  z.object({...req, type: z.literal('transaction.accept'), offer: GuardedCoreOffer}).strict(),
+  z.object({...req, type: z.literal('transaction.observe'), input: ScopedObservationInput}).strict(),
+  /** A local explicit UI action; the host derives the actor and original undo ledger. */
+  z.object({...req, type: z.literal('transaction.undo')}).strict(),
   z.object({ ...base, type: z.literal('ready'), protocol: z.literal(PROTOCOL_VERSION) }),
   /**
    * How far along opening is, for the opening board (S3 3.3f); optional. A progress of 1, or the
@@ -247,7 +294,9 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...req, type: z.literal('save'), reason: SaveReason, files: z.array(SavedFile).max(10000), name: z.string().max(80).optional() }),
   /** A model call for a job the folder names; the host resolves the job's model and routes the call by that job's route (plan compute or the person's own key). */
   z.object({ ...req, type: z.literal('model.call'), job: z.string().min(1), request: ModelRequest }),
-  /** Withdraw a request of the folder's own that is still pending (a model call); the host answers it `ok: false`. */
+  /** Checks the literal line before the core renders or saves it. */
+  z.object({ ...req, type: z.literal('person.check'), text: z.string().min(1).max(20000).refine(text => !!text.trim()) }).strict(),
+  /** Withdraw a pending model or person-text check; the host answers it `ok: false`. */
   z.object({ ...base, type: z.literal('cancel'), id: z.number().int().nonnegative() }),
   /** An event the Reality marks; at or above the owner's interrupt level it pauses running while away (PV23). */
   z.object({ ...base, type: z.literal('event'), level: z.enum(['minor', 'notable', 'major']), text: z.string().max(500) }),
@@ -259,6 +308,8 @@ export const FolderMessage = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('meter'), counts: z.record(z.string().regex(/^[a-z][a-z0-9_.]{0,63}$/), z.number().int().nonnegative()) }),
   /** One of the folder's own files, from the version started from (D8); the reply carries base64 `data`. */
   z.object({ ...req, type: z.literal('file.read'), path: FolderPath }),
+  /** Exact wasm from a selected immutable module; private core only. */
+  z.object({ ...req, type: z.literal('mechanic.read'), source: MechanicSourceRequest }).strict(),
   /** A file the person chooses, through the dialog on a computer and the photo library on a phone; the reply is `{ name, mime, data }` or a refusal. */
   z.object({ ...req, type: z.literal('file.pick'), accept: z.array(z.string().min(1)).min(1) }),
   /** A file the person exports; the App saves it through the dialog on a computer and the share sheet on a phone. */
@@ -268,12 +319,13 @@ export const FolderMessage = z.discriminatedUnion('type', [
    * Reality as the corners do: Saves, the copy flow (MR1.3), the rating (PV10), or a start from a
    * scene's save. No reply; the App may decline silently where the surface does not apply.
    */
-  z.object({ ...base, type: z.literal('app.open'), what: z.enum(['saves', 'copy', 'rate', 'start-from']), detail: z.string().max(200).optional() }),
+  z.object({ ...base, type: z.literal('app.open'), what: z.enum(['saves', 'copy', 'rate', 'start-from', 'away']), detail: z.string().max(200).optional() }),
   /** The person's preferences for this folder, kept per account across Realities and devices (at most 2 MiB as JSON). */
   z.object({ ...req, type: z.literal('prefs.set'), prefs: z.unknown() }),
+  z.object({ ...base, type:z.literal('component.failed'),failure:ComponentFailure }),
   z.object({ ...base, type: z.literal('error'), message: z.string().max(2000) }),
   /** Answers to the host's requests (pause, resume, state.*, change.*, layout.*). */
-  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional() }),
+  z.object({ ...base, type: z.literal('reply'), reply_to: z.number().int(), ok: z.boolean(), result: z.unknown().optional(), error: z.string().optional(), code: z.string().min(1).optional(), detail: RefusalDetail.optional() }),
 ]);
 export type FolderMessage = z.infer<typeof FolderMessage>;
 
@@ -281,7 +333,10 @@ export type FolderMessage = z.infer<typeof FolderMessage>;
 export const AgentReply = z.object({
   text: z.string(),
   /** A decision asked of the person, drawn as a card by whoever shows the reply. */
-  decision: z.object({ id: z.string().min(1), text: z.string().max(500), choices: z.array(z.string().min(1).max(80)).min(1) }).optional(),
+  decision: z.object({ id: z.string().min(1), text: z.string().max(500), choices: z.array(z.string().min(1).max(80)).min(1),
+    /** Actual stored card kind. Only explicit other is a private question; absence grants no exception. */
+    kind: z.enum(['build', 'change', 'layout', 'pause', 'other']).optional(),
+  }).optional(),
   /** A proposal the reply describes, so the folder can draw its preview. */
   proposal: Proposal.optional(),
 });
@@ -296,6 +351,14 @@ export const PauseReply = z.object({ at: z.number().optional(), paused: z.boolea
  */
 export function permitted(msg: FolderMessage, asks: z.infer<typeof Asks>): { ok: true } | { ok: false; reason: string } {
   switch (msg.type) {
+    case 'file.pick':
+    case 'file.export':
+      return asks.surface !== 'none' ? { ok: true } : { ok: false, reason: 'a visible page is required for file dialogs' };
+    case 'transaction.undo':
+      return asks.saves && asks.agent === 'change' ? {ok: true} : {ok: false, reason: 'the folder did not ask for saved agent changes'};
+    case 'transaction.accept':
+    case 'transaction.observe':
+      return asks.saves ? {ok: true} : {ok: false, reason: 'the folder did not ask for saves'};
     case 'save':
       return asks.saves ? { ok: true } : { ok: false, reason: 'the folder did not ask for saves' };
     case 'model.call': {

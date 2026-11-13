@@ -10,7 +10,7 @@ The host contract's message vocabulary (the asks of the files page Section 5) an
 
 ## The record it answers to
 
-The files page Sections 3 to 6; the engines matrix Sections 2 and 4; MR2.1, MR3.1, MR5.1, MR5.3. The record is the operator's published pages and canvases, indexed in [the coverage index](https://claude.ai/artifact/VyiizrkJLiAS53ky4TTryN); a copy in a repository is not the record, and where this repository and the record differ, the record holds.
+The files page Sections 3 to 6; the engines matrix Sections 2 and 4; MR2.1, MR3.1, MR5.1, MR5.3. The authoritative repository record is indexed in the [product coverage index](../command-center/docs/product/coverage.md). Since the operator's decision of 2026-10-15, the published pages and canvases are its view. Changes are made in those permanent product files first, on review branches; where this repository and the record differ, the record holds.
 
 ## What it depends on
 
@@ -26,8 +26,158 @@ TypeScript, Zod, JSON Schema. The reasons are in [`docs/decisions.md`](./docs/de
 
 ## Status
 
+MR4.4 person-text check. A private core can call `checkPersonText` when its host advertises a configured `person.check` handler. The request carries the exact submitted text and its cancellable request ID. The host derives authority and returns a normalized verdict, category codes and notices. Page and combined endpoints have no check capability. Refusals contain no submitted text. The product host and core supply authorization and enforce the result before showing or saving text.
+
+The additive0.3.11 installed-entry declaration retains per-target build prefixes and optionally names each exact own-tree executable through `entry.executables`. Exact target-set, portable paths and non-overlapping prefix checks precede execution. Existing declarationless manifests remain compatible; only explicit legacy fixed-entry workers may select their executable. Consumers bind any present declaration to the unchanged signed build list, including both sides of ancestry/copy reuse. Source declaration and mechanism binding do not establish target execution or installed acceptance.
+
 Wave 0, 2026-10-14: the manifest, interface, and contract schemas (`src/manifest.ts`, `src/interface.ts`, emitted as JSON Schema in `schemas/`), the works / may work / won't work marks (`src/marks.ts`), the version 1 message vocabulary with what each ask permits (`src/protocol.ts`), the host's bridge (`src/bridge.ts`), and the folder's loader (`src/loader.ts`), with tests.
 
 Wave 2, 2026-10-15 (0.2.0): the contract as the wave 2 design settles it (`command-center/.../cycles/2026-10-13-build-v2/wave-2-design.md`). The grant carries the version started from, the folder's tree, the resolved uses as laid out under `/uses/<ref>/`, and the person's preferences for the folder; a save is one act (`save.request` tells the folder why, the folder's `save` carries the reason and the complete tree, the reply is the version); `pause` and `resume` are requests with a reply; `model.call` takes a text or an image request, streams paragraphs as `model.part`, and can be cancelled; the agent's channel has structured queries, `change.forecast`, proposals with a preview in four groups and a forecast or its absence, `change.apply` by the person or by the approved plan, and `layout.set` and `layout.reset`; the folder can read its own files, ask the person for a file, report progress, keep preferences, and answer a decision card; the interface file names the engine's module, parts, state parts, and save format; the contract file names a folder's module, what it recommends, and what it keeps; the slots gain the scene picture and the artifact item; the ask parts gain the agent to read; a Reality takes its entry from the pack it uses; `src/port.ts` is the envelope a folder's page calls its core by. Still to come, in the waves that use them: the folder client that checks out and saves against the platform's folder store, the WebSocket and loopback transports, and the journeys hooks in the loader.
 
 0.3.3, 2026-10-15: `startCore(url)` starts the core from a classic `blob:` bootstrap that imports it dynamically and holds the page's messages, with their ports, until the core listens (`src/start-core.ts`; the App's request 9), since Chromium refuses a module worker from a `blob:` URL in a sandboxed frame. `scripts/worker-check.mjs` (`pnpm check:worker`) checks it in Chromium, WebKit, and Gecko with Playwright.
+
+Continuation, 2026-10-15: requestSave registers its observer before dispatch, so transports that deliver synchronously return the committed version correctly. Refused or failed sends remove their waiter immediately. All 37 tests, typecheck, and schema build pass on Node 24.22.0; the synchronous-save regression failed before the correction. No public contract shape changed.
+
+Wave 3 foundation, 2026-10-15: the files record's E7 amendment is implemented as explicit `core` and `page` endpoint families on `HostBridge`. The page can pick/export files, keep preferences, and open App surfaces; it cannot save, make model calls, or invoke the agent. The core keeps those authoritative operations and cannot open per-person dialogs. Replies are correlated within each bridge. Both receive display; corner/layout go only to the page, and quit only to the core. `connectCore` and `connectPage` return distinct runtime surfaces; `framePorts` receives both ports in one parent handoff. Existing `connect` and the default `combined` bridge remain deprecated local compatibility paths for unchanged 0.3 consumers. New runner, server, App and SDK consumers must select a family explicitly; combined must never be remotely reachable. The grant identifies the family and may carry mode and player count. This is the first 0.4 foundation slice, not a release or completed Wave 3; existing dependencies remain pinned.
+
+Wave 3 worker transport, 2026-10-15: `workerTransport` adapts Node's worker_threads Worker and Bun's EventTarget Worker to `Transport`, including termination and the optional close lifecycle. It imports no runtime-specific module into the browser package. Early startup messages are retained until a bridge subscribes, with a 1,000-message internal startup guard. Nine tests cover both API shapes and four actual local workers across Node 24.22.0 and Bun 1.4.3. CI installs Bun so the native Bun worker test runs there. This establishes the local transport seam for the server; compiled executable loading, engine WebAssembly, operating-system conformance, and security isolation remain separate gates. Details and runtime references are in `docs/workers.md`.
+
+NP8 continuation: optional away pace/compute-share metadata and the page-local `away` App surface are validated by the protocol. Missing usage is null, never an invented zero. All 69 host tests, typecheck and schema build pass. App screen and platform usage integration remain separate consumer work.
+
+E8 sender seam: folder port calls may carry a trusted transport-stamped `from`, forwarded as the handler second argument. This field is not authentication; a remote server must replace client-supplied identity before dispatch. Port clients reject pending calls on disconnect and remove waiters after failed sends; servers suppress replies after closure. Full pre-final suite: 72 tests; final four lifecycle tests, typecheck and build pass. Remote admission/reconnect remain separate implementation work.
+
+E8 wire schema: `src/remote-schema.ts` exports distinct client and server envelopes and fixed-error JSON codecs for the canonical four-channel player connection. The emitted `remote-client-frame` and `remote-server-frame` JSON Schemas describe that wire separately from the privileged host vocabulary. Synchronization, safe sequence numbers, stable request ids and opaque admission credentials are validated structurally. The remote client and server lifecycle implementations remain separate from this schema slice. See [the remote connection](docs/remote.md).
+
+E8 client: `src/remote.ts` now supplies remotePort from the package root and loader. It retains the PortClient surface, with exact snapshot/ack/ready gating, stable pending request identities, explicit reconnect, the recorded refresh and loss window, and separate input/agent/control methods. Twenty-one client tests include stalled snapshot cancellation, reply correlation, resume rotation, epoch refusal, fixed deadline, queue/frame bounds, reentrant observers and send failure. The complete host suite passes 99 tests with typecheck and schema build. Server and platform authority, pack per-player projections, actual socket integration and multiplayer journeys remain separate gates.
+
+E5 refusal seam: privileged reply envelopes now retain optional code and JSON-object detail through the bridge and loader. `HostRefusal`, also exported as `HostRefusalError`, extends Error; old text-only failures remain Error. `src/refusal.ts` validates explicit detail and never derives model policy or optionality. Nine added tests include seven failing-before regressions; the complete host suite passes 108 tests, typecheck and build. [Structured refusals](docs/refusals.md) describe consumer responsibilities and compatibility.
+
+
+The root additionally exports E12/E16's installed build schemas and exact canonical helpers (`src/builds.ts`, [encoding](docs/builds.md)). SDK check signing and the App installer use the same versioned prefix/entry/file binding. Native signature verification and real artifact acceptance remain consumer obligations.
+
+MR3.7 private game projection, 2026-11-10. An opted-in game serves `ew.remote-player.v1` on a separate folder port. It declares a bounded set of game calls and input kinds, receives only the current admitted player's public identity, and provides that player's snapshot and notices. The server remains responsible for authenticated admission, sender stamping, sequencing, cancellation and routing notices to the correct player. The projection port has no host grants or privileged operations. The `ew.remote.` notice namespace is reserved for the server. Existing folder ports and the player WebSocket keep their existing wire. This contract does not establish native execution or shared terminal support.
+
+Installed player transport, 2026-11-10. The Server and SDK split their admitted local socket into raw core frames and a tagged game projection channel. Malformed tagged traffic closes projection. Core saves and quit use the raw channel. Core close and physical socket loss close both channels. An installed game declares `entry.playerProjection` with its server build and licensed web page. The Server checks the build and negotiates the private projection before opening the guest transport.
+
+Remote page application, 2026-10-16: optional applyNotice waits for a cross-frame page to apply a live or replayed notice before advancing the applied sequence. Cancellation follows the connection generation. Without it, existing synchronous subscribers retain their behavior. All 113 tests, typecheck and build pass, including a replay whose delayed page application holds readiness.
+
+Reconnect baseline correction: a connection lost before its initial snapshot installation completes now closes and requires a fresh join. It cannot resume from sequence zero without a page baseline. A later interrupted replacement retains the previous valid baseline. All 114 tests, typecheck and build pass.
+
+Public agent decisions optionally carry their actual stored card kind. Only explicit other identifies a private question for presentation; missing kind retains the conservative change gate and unknown values fail validation. Older replies remain valid. Server consumers must independently classify the durable active-chat record and authorize its actual effect before answering or applying. No authority is inferred from proposal presence or prose.
+
+## Engine-owned save inspection
+
+E18 optionally declares EngineInterface.saveInspection with a checked relative module and unique exact Reality input files. SaveInspectionInput carries cloned bytes for those paths and the immutable own-tree inventory; SaveInspection validates empty/ready/update/refused, bounded descriptions and consistent format fields. The host also compares currentFormat with the interface format. The module runs without a host connection in an isolated folder-origin worker before a play session. The platform neither executes it nor parses private engine headers. Missing declarations retain existing version-range behavior without a format-verification claim. The first-party engine and the App/server consumers implement this contract independently.
+
+E10 address registration shares `serverAddress`, a pure normalizer for hostname, IPv4 or bracketed IPv6 plus port. It uses PV86's 7420 default, rejects URL authority/path tricks and ambiguous numeric rewrites, and performs no lookup or connection. A normalized string is only a registry key; current authenticated advertisement and account policy supply admission authority. Source `b0b18ed13a` precedes implementation. Platform and server configuration consume this same helper.
+
+Studio validation continuation, 2026-10-16: optional studioValidation on engine interfaces and folder contracts names an immutable module and confined own-file exact/prefix reads. The shared input helper clones only selected bytes, preserves the own-file path inventory and supplies the exact root snapshot and requested tick count. Strict named findings and counted run results reject duplicate or empty evidence, unknown fields, unsafe counters, inconsistent tick deltas and a module lowering the requested count. No overall Studio pass or handoff is represented. Import execution, hash verification, cancellation, resource bounds and isolation remain trusted caller duties; a worker is not a security sandbox. The first-party engine/pack and server execution consumers are a separate source-backed continuation. No old contract is required to declare a checker, and missing declarations confer no evidence.
+
+## Saved Studio render contract
+
+Optional studioRender on interface/contract names a separate confined module and exact/prefix input reads. mountStudio receives an element and an exact saved snapshot, normalized manifest, full own-file inventory, cloned selected bytes and display settings. It returns an update/unmount handle, synchronously or asynchronously. No play, model, save, advance or preference port exists in this input. Reads selects bytes rather than proving filesystem isolation. The App owns the sandboxed bootstrap and authorizes its immutable asset layout separately; ordinary play entries are never substituted. Source23f12380bd defines this initial saved inspection slice. Explicit agent/manual editing and Start/scenario tools remain separate.
+
+The input selectors accept genuine Uint8Array values across frame realms, while refusing other typed views. ArrayBuffer.isView plus the precise typed-array tag avoids instanceof rejecting legitimate structured byte data. A real vm-realm regression covers this boundary.
+
+## Exact-save scenario tool recipes
+
+Optional studioScenario declares its own module, selected own reads and the implemented advance/set_variable tool names. Input carries only exact saved data plus an explicit ordered recipe. Strict results retain actual tick/hash continuity and exact action outcomes, with completed meaning tool execution rather than a semantic assertion. No model/interactive turn or classifier result is fabricated. Unknown tools, changed recipes, skipped completed actions and invented tick deltas refuse. Sourceb9cfaff873 defines this bounded S8.3 prerequisite. The shared saved-input selector is reused by validation/render/scenario so each clones the same confined own data without adding authority.
+
+
+## Authored exact-save sampling declaration
+
+Source51999acf9f adds optional studioSampling metadata on interface and contract: confined module, selected own reads and an explicit saved root corpus path. StudioSamplingCorpus has a name, entry-defined setup and ordered unique named input records. The entry owns what each input means; the host does not invent a player or a twenty-line corpus. studioSamplingInput clones the exact snapshot/manifest/selected bytes and the parsed authored corpus, retaining the caller's requested count without manufacturing missing turns. This is a declaration/input prerequisite only. It grants no model/save port, classifier pass, actual turn count or handoff authority. Production sampling adapters and owner-scoped durable call admission remain separate implementation work.
+
+All132 tests, TypeScript and schema build pass. The two new cases check confined own paths, absent/duplicate input records, selected-byte/corpus cloning and a requested20 count with only one authored input remaining one input. Existing consumers are unchanged until explicitly advanced to this additive declaration; no folder is given a sampling capability merely by this host change.
+
+
+Measured sampling observations, source3a87b4bdfe: StudioSamplingInput may carry exact resolved dependency identities. checkedStudioSampling accepts only an authored ordered prefix with matching input digests, actual turn-counter increments, continuous tick/state hashes and non-overlapping call spans. The strict observation contains no clean or completed-count flag. Its unavailable/failed state does not certify arbitrary uploaded code; the trusted consumer must correlate call spans with its retained actual receipts. The first-party adapter remains responsible for exercising actual startCore/say operations.
+
+Sampling coverage prerequisite, source68a07b25bb: studioSamplingPrompt serializes actual system/message words using ew.studio.prompt.v1, so the parent and entry hash the same content. Optional named description inventories contain only source/text digests and classifier sequences. Observation validation requires unique source identities and distinct ordered classifier work. It accepts no clean/count flag and establishes no completeness beyond the declared entry-produced scope. Platform must independently match every performed item to retained actual work.
+
+Authored scenario assertions, sourceba04bcb66c: optional expectation capability names tick_equals and variable_equals. Inputs retain exact authored scalar predicates; strict results compare actual final values, distinguish a missing variable from null, require a completed recipe before checked outcomes, and reject empty pass claims. Missing old fields remain tool-only evidence. No script, model or publication authority is added.
+
+Source4f1362f103 defines StudioScenarioSuite for the exact root studio/scenarios.json: trimmed named recipes with unique opaque ids, explicit supported actions and nonempty final-state predicates. Empty saved inventories remain authorable but cannot pass acceptance. The exported1MiB parser capacity reuses existing saved-bookkeeping/manual inspection, separately from configured total execution budgets and customer quotas. A JSON Schema is emitted for authoring; actual uniqueness checks remain in the parser. No execution or passing evidence is conferred by parsing.
+
+Named sampling text, source2c1b0420a5: an optional templates inventory separately binds actual compiled prompt-template source/text hashes to distinct ordered classifier sequences. Existing assembled prompts and saved descriptions retain their meanings. Structural observations supply no clean flag or complete arbitrary-code coverage.
+
+Verified Studio own-tree metadata, source47a0604d2b: optional path/hash/size inventory accompanies selected bytes without expanding reads. The selector checks exact paths, selected complete-byte size/digest and clones metadata. Trusted execution callers derive metadata from the same already-verified root tree; it is not an authority supplied by executable output. Older callers remain supported without complete-tree protocol evidence.
+
+
+Read-only agent sampling source c1053d8350 adds optional admitted owner/timestamp input and separately authored agent-question observations. Strict nullable call spans and read counts do not establish play turns. The shared checker binds questions to the authored ordered input prefix and refuses malformed completion or overlapping work. Older callers remain valid without these fields; the actual AgentSession/call accounting producer remains independent.
+
+
+Source3857f19c1c adds optional agentRoutes sampling observations bound to authored turn identities/digests, ordered actual call spans and explicit reply/deadline/refused/cancelled winners. A nonreply winner cannot carry a decision or completion; missing older observations grant no route or turn credit. These data do not expose a timer or model port. Actual runtime and parent receipt correlation remain consumer responsibilities.
+
+Source d92f0563a7 adds optional engine-kind sampling dependency metadata from checked interface bytes, plus named read/query/explain/forecast observations on existing agent questions. The descriptor records the actual interface hash, canonical EngineCall list and forecast flag; other dependency kinds cannot carry it. Facility completion requires real successful calls, and successful forecast observations bind an interface digest. Missing old metadata/observations stay unperformed. These schemas add no file read, tool permission, complete model or handoff authority. All143 tests, types and build pass at this metadata checkpoint; real execution is supplied by the dependent Agent/Pack/Platform continuation.
+
+
+L3 file-dialog admission, 2026-10-16: file.pick and file.export refuse when the granted surface is none, including the default absent surface. A visible surface only permits the request to reach the App-owned approval flow; it is not user-gesture or native filesystem authority. The App separately binds confirmation and native cancellation to the current account/page lifetime. All145 Host tests pass, followed by final fixture typing correction, types and schema build.
+
+Authored change diagnostic contract, 2026-10-16: source7639aa1bfb/ffae18c751 adds optional setup.agentChanges with existing bounded authored id/text, explicit diagnostic do it/never mind, undo and existing scalar expectations. Strict optional transaction observations preserve actual original-card approval, copied barrier, application/readback and restoration outcomes separately from PLAY turns. Completion requires exact bound state/expectations and any authored undo; decline plus undo:true invokes nothing. Ordered spans cannot reuse question or earlier change work. Missing fields grant no change acceptance. This contract supplies no live approval, save port, model work or overall Studio handoff; the actual Agent/Pack/Platform composition remains its consumer obligation. Nine focused sampling/change schema cases and type/schema build pass.
+
+Original change sampling can additionally retain the existing named invariant read/query/explain/forecast facility observations per authored transaction (sourcefe3a522cbf). Optional absence stays unperformed. Strict counts/outcomes remain distinct from actual mutation/barrier/readback/undo and from Platform-derived model calls; this schema grants no complete trial or handoff by itself.
+
+Optional StudioValidationResult.warnings carries strict pass/warn/unavailable nonblocking diagnostics. Warning identities are unique across both result arrays; old omission remains accepted and unperformed. Required checks and counted runs retain their existing states. Source f7aa7a095c clarifies the actual first-party controlled-name consumer; neither a warning nor its absence supplies overall Check/handoff evidence.
+
+R4 selected-engine context, in progress: optional trusted `SelectedEngine` metadata in core grants and exact-save Studio inputs names the selected immutable version/tree/interface, confined module and actual forecast capability. The forecast call remains distinct from a predictive result. Own-byte Studio selection clones this context and does not grant dependency files. Existing inputs without the additive context retain their prior shape. The complete alternative-engine consumer and integrated acceptance remain in progress under Command Center `16a52cdfde` / `c112c22305`.
+
+Selected-engine context validation:28 focused cases in six Host files, whole Host types and source build pass. This shared contract commit is a dependency within the ongoing complete R4 branch, not acceptance of the Library engine journey or any no-forecast publication.
+
+A selected direct engine may coexist with the pack's retained transitive base engine. Marks check every pack/module requirement against the selected engine, while a second resolved folder with an actual engine interface remains an engine rather than an absent pack contract. Missing base interfaces and unmet selected-engine calls retain unavailable/incompatible marks. This accompanies exact selection; it does not choose by JSON object order or confer source access.
+
+R4 selected component context, in progress under CCd4c3872794/e522778209: optional trusted SelectedComponents carries a versioned binding digest, nullable selected engine, exact entry and slot-to-module vectors into grants and saved Studio inputs. The actual caller verifies source identity/access. Marks distinguish known missing needs and slot availability from unconfirmed fit ranges. Old contexts remain readable. This shared representation is being consumed by the complete Library module/pack application batch, with no implementation acceptance claimed.
+
+The first component-context verification passes38 focused Host cases, types and source build, including cloned Studio selection, explicit engine-free entry, renamed slot capabilities, repeated slots, missing bound metadata and incompatible needs. This is a reproducible dependency for the ongoing full batch, not Library application acceptance. The distinct0.3.5 package version avoids TypeScript merging its new grant shape with older transitive Host versions.
+
+Exact component trials additionally carry a bounded component.failed report naming binding digest, selected reference and actual import/mount/update/startup phase. Page and core can report failure, without any save or model authority. The receiving App must match its current explicit trial and confirm real holder closure before using the original authorized undo. The folder loader refuses a bound grant missing its component context. These mechanisms remain part of the ongoing used batch, not proof that an arbitrary error or transport timeout warrants restoration.
+
+Component fit/slot interpretation is enabled only by the explicit component context. Unbound and version1 marks preserve their original behavior. A permanent comparative negative protects this boundary.
+
+0.3.7 R4 Studio consumers retain an optional verified resolved-use vector alongside selected component context. Studio input selection validates and clones it, so copied diagnostic cores can validate exact slot and entry references without rediscovering dependency versions. Existing callers without this vector retain their prior inputs.
+
+0.3.8: `startCore` optionally reports structured import failure before the browser error event, whose original exception is absent in Chromium and WebKit. Known JavaScript exceptions are distinguished from TypeError and unknown load failures; ambiguous failures cannot authorize automatic component undo. The callback is bound to the worker and exact core URL and fires once. Legacy callers retain their worker error event.
+
+
+## Private scoped transaction observation
+
+R2's admitted consumer continuation adds optional scopedTransactions metadata and host-stamped scoped actor bindings to the existing privileged change messages. The closed tuple names the actual host and actor generations, purpose, immutable loaded policy, core generation, exact proposal/decision, complete Engine path inventory and every remaining path/hash. transaction.observe is core-only; both page and transitional combined endpoints refuse it. Existing messages with fields omitted retain their prior meaning.
+
+ScopedHostTransactions uses the injected existing CoreOperations queue. Nested observations belong to the operation already holding that queue and cannot join behind themselves. Current actor/host/lease is checked after awaited authorization, the exact current outside tree is compared, and one observation binds its expected save parent. Caller composition must keep all relevant mutations on that same queue and enforce the final synchronous Pack/Engine assertion. The helper captures callbacks before awaits and blocks fresh writes after unknown inverse persistence. This is the private transport prerequisite, not complete scoped runtime activation or a public port capability.
+
+
+The same private seam carries an explicit actor-free transaction.undo UI request, host-delivered exact actor-generation/core invalidation and complete confirmed ScopedSavedState metadata. The host derives the undo actor and original ledger; neither the page nor request payload names a foreign actor, target or older tree. Invalidation can revoke only the named existing generation. Confirmed save metadata lets a Pack bind host-merged outside files without inferring them from an older listing. These additions remain core-only and do not grant creator authority or enable scoped startup on their own.
+
+Studio authoring ports are private executor-installed functions, not saved input fields or a declaration. The optional `authoring(input)` accepts only the actual execution input and returns a bounded original run/actor generation, immutable context digest and current-lifetime assertion. Ordinary validators and player hosts omit it. An executor must bind its original authorized check/sample, exact root/dependencies/modules and issuer before VM start; the capability allows only a disposable authoring diagnostic, with no Platform save or wider provider authority. Astra independently accepts the bounded local composition at Host4d18c61, Packd94c8c1, App4208766, Servera002f08 and Platform7efd050. This transport alone still grants no runtime activation. Native mounting/lifecycle, live providers, deployed multi-user authority and whole-wave gates remain separate.
+
+## Optional ordinary private-core admission
+
+The S12/F3.43 continuation adds `guardedCore` with the distinct `ew.guarded-core.v1` marker, one fresh transaction grant and the exact resolved version, component binding and selected Engine. `transaction.accept` is private-core-only; the legacy `scopedTransactions` grant remains separate. An exact acceptance transports participation only after the consumer proves and installs its actual Engine guards. Hosts own one-time, current-generation admission and the existing save/authority ledger. Protocol1 readiness, method names and release versions confer no guarded capability. Existing page, combined and installed peers acquire no new permission. Controlled contract checks establish message and endpoint behavior; native exact-card acceptance is separate.
+
+## Optional away narration originals
+
+The optional `awayNarrationOriginals` grant and text `awayOriginal` metadata distinguish free server preparation, the first dispatch after a confirmed saved intent, and read-only original recovery. Older requests and grants retain their existing shape. The capability is explicit and gives no additional job or page authority; consumers must use a prepared original, current host-derived saved source and the Platform's current authorization. Missing capability cannot authorize replay of an earlier untracked narration. Source protocol acceptance does not establish consumer installation or native recovery.
+
+## Original D1 mechanic source candidate
+
+The additive source candidate defines core-only `mechanic.read`, separate from
+own `file.read`. Its strict source tuple pins a selected module's ref, semantic
+version, immutable version id, tree digest, path and byte hash.
+`mechanicSourceReader` snapshots an already verified dependency catalogue and
+returns only exact checked wasm bytes. It grants no ambient path read or file
+listing; page and combined endpoints refuse. The editing core's existing empty
+`uses` grant need not expand for the first source proposal.
+
+Copied Studio inputs may carry separately cloned `mechanicSources` from those
+verified module trees, without mixing them into the own-file inventory.
+`mechanicSourcesInState` extracts only exact saved mechanic declarations.
+Engine, App and Server consumers are recorded in
+[the Engine candidate contract](../emergence-engine/docs/wasm-mechanics.md).
+Shared installed dependency/dist bytes and public versions are unchanged; final
+integration, package delivery and installed target acceptance are pending.
+
+The unpublished0.3.14 candidate additionally accepts selected module ref/path
+requests with optional expected SHA-256. mechanicSourceReader canonicalizes
+these only against its captured selected immutable snapshot and always returns
+the full source tuple. The prior full-tuple request remains compatible. This
+provides ordinary authoring input, not catalogue listing or ambient reads.

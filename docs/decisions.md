@@ -1,6 +1,304 @@
 # Decisions: ew-host
 
+## 2026-11-10 Installed game projection on the admitted local socket
+
+**Decision.** Carry private game projection on the same one-use local socket with a strict `ewPlayerProjection` frame. Keep the existing raw core wire. Projection close preserves the core connection and a core close ends both channels.
+
+**Alternatives.** A second socket would add another authentication and lifetime boundary. Relaying tagged frames to the core would mix projection with saves, models and quit.
+
+**Rationale.** E16 already supplies the authenticated local transport. Separating message families at that boundary preserves ordinary installed lifecycle and keeps guest admission on the Server.
+
+## 2026-11-10 Private game projection for remote play
+
+**Decision.** Add a versioned projection service on a separate private folder port. A game declares its callable methods and inputs and produces bounded snapshots and sender-specific notices. The server supplies the admitted public identity.
+
+**Alternatives.** Relaying the general core port would expose unrelated operations. Making the Server parse each game's projection would couple admission to individual games.
+
+**Rationale.** E7 and E8 separate the page, its game projection and the privileged host contract. The existing player transport can carry a game-authored projection while the Server keeps admission and delivery authority.
+
+## 2026-10-21: Declare exact installed executables beside build prefixes
+
+**Decision.** Add optional `entry.executables` with exactly the installed target set and confined own-tree paths. Preserve prefix strings and declarationless legacy manifests. Bind present declarations to unchanged canonical signed entries, including current/original artifact reuse and original reads.
+
+**Alternatives.** A deployment-wide sample filename cannot serve an ordinary creator's layout. Replacing existing prefix strings with target objects would break the prefix contract. Filename guessing would not be an explicit declaration.
+
+**Rationale.** The permanent files record describes any SDK build and names an entry for each system. The same sole High reviewer admitted this additive shape and the backward-compatibility/receipt equality requirements before implementation. Actual qualified execution and ordinary installation remain consumer obligations.
+
+## 2026-10-20: Explicit image operation identity and original-only lookup
+
+**Decision:** Add optional UUID requestId and originalOnly to image model requests. Lookup-only requires an explicit identity. These fields select the current account's existing original; they confer no account, session or provider authority. Older callers remain compatible. The private core grant advertises imageOriginals only when the host preserves identity and lookup-only semantics; new callers refuse explicit intents when this capability is absent.
+
+**Alternatives:** Generate a new identity on each bridge call, or deduplicate prompts.
+
+**Rationale:** A caller that durably saved its intent must recover that exact operation without repeating paid dispatch.
+
+
+## 2026-10-18: Bind scoped transactions to the actual private host operation
+
+**Decision:** Add an optional core-only transaction observation and closed actor/host/core/policy/proposal/decision/tree tuple. A reusable host helper runs within the caller's existing CoreOperations queue, captures authority callbacks, rechecks current authority after awaits and issues one observation. The complete outside tree excludes only enumerated exact Engine-owned paths. Unknown inverse persistence blocks further mutations until original-save recovery or persisted-state reload.
+
+**Alternatives:** Infer actor or creator purpose from SYSTEM, ownership or a model payload; use the Engine state hash as a full folder identity; run a separate queue for observations; restore an older whole tree after scoped undo.
+
+**Rationale:** The admitted R2 complete consumer continuation requires a one-use private observation after actual authority/save barriers. The public folder-port vocabulary is unchanged. This additive seam does not enable scoped play, approve a decision, provide current authority by shape or prove a selected Engine's guards. Pack, App and Server must compose their actual lifetimes, operation queues and persistence before activation.
+
+## 2026-10-17: Retain explicit component entry and slot identity
+
+**Decision:** Carry a closed optional SelectedComponents context through grants and exact-save Studio inputs, with a binding digest, nullable engine, explicit entry and exact slot fillers.
+
+**Alternatives:** Recompute entry by object iteration, select modules by first-party short names, or omit selection when copying a save.
+
+**Rationale:** The admitted Library module/pack batch needs the same immutable choice in normal play, copy, Check and publication. Several fillers may coexist for a pack slot. Source authority is established by callers and is never created by this metadata. CCd4c3872794 and canonical e522778209 define the complete batch.
+
+## 2026-10-17: Preserve transitive engine metadata beside an explicit selection
+
+**Decision:** When checking a selected engine, treat other resolved folders with a real engine interface as engines, while checking all pack/module requirements against the selected implementation.
+
+**Alternatives:** Require a pack contract on the retained transitive base engine, or delete that declared dependency from the resolution.
+
+**Rationale:** An explicit direct fork can replace runtime execution while a pack keeps its base dependency. The admitted R4 depth-selection and immutable-binding design preserves that complete graph without inventing a missing-contract incompatibility.
+
+## 2026-10-17: Carry the host-selected exact engine into execution
+
+**Decision:** Add optional closed SelectedEngine context to core grants and exact-save Studio inputs. It retains the selected immutable version, tree, interface, module and actual forecast capability. Existing input shapes remain valid.
+
+**Alternatives:** Import a fixed first-party engine URL, or infer the chosen engine from object insertion order.
+
+**Rationale:** The admitted R4 Library engine-change journey needs the same exact selected implementation in play, validation, sampling, scenarios and rendering. The trusted caller establishes identity and access; the context grants no dependency bytes. Command Center16a52cdfde/c112c22305 and permanent S6/S8 source7200495ba5 govern the complete branch.
+
+## 2026-10-16: Separate nonblocking validation diagnostics
+
+**Decision:** Add optional strict warnings to saved Studio validation results, with pass/warn/unavailable and unique identities across checks and warnings.
+
+**Alternatives:** Add warn to required checks, or discard nonblocking findings.
+
+**Rationale:** StudioCheck names an actual nonblocking controlled-variable diagnostic. Existing required failure semantics and legacy unperformed evidence remain unchanged.
+
+## 2026-10-16: Retain named invariant facilities within authored changes
+
+**Decision.** Add optional existing read/query/explain/forecast observations to each authored change transaction and check their actual count/outcome consistency.
+
+**Alternatives.** Infer the facilities from a proposal forecast or total successful reads.
+
+**Rationale.** Sourcefe3a522cbf requires actual named handler observations before a complete original-change trial can receive scoped protocol credit. Mutation and Platform model evidence remain independent; absent optional evidence cannot supply completion.
+
+## 2026-10-16: Bind authored diagnostic choices to actual change observations
+
+**Decision.** Add strict optional Studio sampling action and observation contracts for the exact authored diagnostic choice, original proposal/card, actual copied barrier/application/readback and any requested undo, with ordered nonreused call spans.
+
+**Alternatives.** Infer approval from model prose, reuse an unrelated card or passing read trial, expose generic control scripts, or treat schema validation as actual execution.
+
+**Rationale.** Sources7639aa1bfb/ffae18c751 require an actual disposable AgentSession transaction without granting live approval, Platform saves or complete model/handoff acceptance. Older optional absence remains unperformed.
+
+## 2026-10-16: Bind read-only sampling facilities to the checked engine interface
+
+**Decision.** Add optional engine-only interface metadata and named actual read/query/explain/forecast observations to the existing saved sampling contracts. Reuse the canonical EngineCall vocabulary through a small shared module.
+
+**Alternatives.** Infer forecasting from method presence, model prose or an unverified claim, or treat aggregate reads as proof of every facility.
+
+**Rationale.** Source d92f0563a7 requires exact interface provenance and actual operation evidence without new host ports or mutation authority. Missing earlier data supplies no forecast or complete acceptance credit.
+
+## 2026-10-16: Retain actual sampled routing race winners
+
+**Decision.** Add optional ordered authored agentRoutes observations with explicit race winner and nullable decision/span, separately from measured turns and SYSTEM questions.
+
+**Alternatives.** Treat eventual successful model settlement as timely routing or count a fallback turn as a successful route.
+
+**Rationale.** Source3857f19c1c requires genuine deadline-aware evidence while preserving older unavailable data and original turn accounting. This schema adds no execution authority.
+
+
+## 2026-10-16: Keep read-only agent questions separate from sampled play turns
+
+**Decision.** Add optional diagnostic identity/time and strict authored question observations to the existing sampling contract. Bind question identities/digests and ordered call spans independently from counted play turns.
+
+**Alternatives.** Treat questions as turns, allow a module-supplied completed count, or require new input for every old caller.
+
+**Rationale.** Source c1053d8350 requires real SYSTEM/AgentSession work without inventing route/timer or twenty-turn coverage. The actual producer must correlate retained model receipts and current authority.
+
+## 2026-10-16: Preserve verified own-tree identities without expanding reads
+
+**Decision**: Add optional cloned own path/hash/size metadata to Studio saved input, check selected bytes against it and preserve declared read selection.
+
+**Alternatives**: Invent hashes for unselected assets, read every own asset into the guest input, or infer full-tree save behavior from selected state only.
+
+**Rationale**: Source47a0604d2b supplies the minimal honest grant inventory for an actual headless save protocol check while keeping trusted immutable-tree derivation and older call sites explicit.
+
+## 2026-10-16: Keep named template evidence separate from assembled requests
+
+**Decision**: Extend sampling observations with optional named template inventory using existing source/text digests and unique classifier sequence references.
+
+**Alternatives**: Count compiled templates as saved descriptions or infer their coverage from whichever prompts the trial happened to assemble.
+
+**Rationale**: Source2c1b0420a5 requires actual scoped work while keeping distinct evidence and legacy observations unchanged.
+
+## 2026-10-16: Declare an exact-save required scenario inventory
+
+**Decision**: Define the strict saved suite, opaque recipe ids and explicit predicates at studio/scenarios.json, following source4f1362f103.
+
+**Alternatives**: Infer the required set from historical interactive receipts or allow an empty predicate pass.
+
+**Rationale**: Actual suite execution needs immutable author-defined acceptance goals. Parsing alone supplies no acceptance or publication authority.
+
+## 2026-10-16: Explicit final-state scenario expectations
+
+**Decision**: Add optional advertised tick/variable equality predicates and strict exact-recipe assertion evidence, following sourceba04bcb66c.
+
+**Alternatives**: Infer expectations, accept arbitrary expressions, or treat completed tools as semantic success.
+
+**Rationale**: Authored scalar checks can be evaluated against actual final state without granting additional host capabilities. Empty and historical runs retain unperformed evidence.
+
+## 2026-10-16: Correlate actual sampling coverage without content retention
+
+**Decision.** Standardize actual prompt-word encoding and optional digest-only description inventories with unique source identities and distinct ordered classifier sequences. Leave counts and verdict correlation to the retained parent authority.
+
+**Alternatives.** A free-form clean flag or call count would not bind actual text. Retaining prompt/description words in metadata would extend their established retention.
+
+**Rationale.** Source68a07b25bb requires actual named coverage prerequisites while arbitrary-entry completeness, full PV54 and publication remain unclaimed.
+
+## 2026-10-16: Verify measured sampled-turn observations against authored inputs
+
+**Decision.** Add strict dependency and turn observations with authored input digests, counter/tick/state continuity and ordered distinct call spans. Keep unavailable/failed outcomes and reject arbitrary clean/count flags.
+
+**Alternatives.** Treating language call count as turn count would credit unperformed turns. Trusting a generic completed count would omit source and sequence evidence.
+
+**Rationale.** Source3a87b4bdfe requires actual first-party core/turn execution plus independent consumer correlation to admitted call receipts. Structural validation is not semantic certification of arbitrary entry code.
+
+## 2026-10-16: Declare authored exact-save sampling without manufacturing inputs
+
+**Decision.** Add an optional actual-entry sampling module/corpus declaration and a cloned saved input contract with unique authored input identities. Keep the requested count separate from the number of supplied inputs and expose no model/save authority in this data helper.
+
+**Alternatives.** Reusing folder-only archived exchanges loses exact-save provenance. Generating twenty generic strings would manufacture an unrecorded sample corpus. A declaration cannot certify execution or classifier safety.
+
+**Rationale.** Source51999acf9f defines the bounded PV54 prerequisite before implementation. Actual runtime/model/classifier admission and the first-party turn adapter must independently establish their evidence.
+
+## 2026-10-16: Record actual scenario tools without inventing semantic passes
+
+**Decision.** Declare exact-save advance/set-variable recipes separately from checks, preserve action/tick/hash continuity and keep model turns/classifier unperformed. Reuse the saved-data selector without any host port.
+
+**Alternatives.** Arbitrary privileged operations would bypass declared tool support. Static rows cannot prove a run. Invented player inputs or clean classifier turns would misrepresent PV54.
+
+**Rationale.** S8.3 names these tools and saved named runs; sourceb9cfaff873 specifies the smallest executed recipe while other pack tools and authored assertions stay unavailable.
+
+## 2026-10-16: Keep Studio saved render separate from play authority
+
+**Decision.** Declare an optional immutable-folder studioRender module with cloned selected saved bytes, normalized manifest and display data. Give it only mount/update/unmount lifecycle, with no host ports.
+
+**Alternatives.** Reusing the ordinary play entry starts a mutable core and grants unrelated lifecycle. A generic write RPC would define unrequested save/approval behavior.
+
+**Rationale.** S8.2 leaves the render view to the pack while keeping Start and explicit editing actions distinct. Source23f12380bd settles the bounded first inspection contract and keeps asset authorization separate from input selection.
+
 Appended newest first. Each entry records the decision, the alternatives considered, and the rationale.
+
+## 2026-10-16: Declare pure Studio validation without an overall pass
+
+**Decision.** Expose optional exact-byte validation declarations and strict finding/run results. Clone only the declared own reads, retain the caller's exact snapshot and validate actual run counters against its request.
+
+**Alternatives.** A save-format inspection does not validate the graph or exercise ticks. Client-reported passes and lowered run counts cannot establish PV54. A checker declaration alone grants no execution or authority.
+
+**Rationale.** S8.4 calls the engine and pack's own checks and requires an actual365-tick run. The caller still verifies immutable bytes, selects the actual entry validator and owns isolation/cancellation. Individual executed evidence stays distinct from unperformed classifier, behavioral and scenario checks and cannot enable handoff by itself.
+
+## 2026-10-16: Share pure advertised-address normalization
+
+**Decision.** Export one browser-compatible hostname/IP/port normalizer for machine configuration and API registry lookup, with no networking.
+
+**Alternatives.** Normalize separately in each consumer, accept arbitrary URLs, or probe a caller-supplied destination.
+
+**Rationale.** E10 registration and joining must identify the same canonical address. Rejecting ambiguous numeric rewrites and URL components prevents parsing from silently changing the destination. The registry, current fence and persisted admission rules remain authoritative.
+
+## 2026-10-16: Declare pure save inspection separately from a running engine
+
+**Decision.** Add optional saveInspection module/input paths and a strict semantic result schema. Keep declared saved input bytes separate from the full path inventory. Consumers isolate the module without host authority and require update preservation before a core starts.
+
+**Alternatives.** Teach the App the first-party header path, load every image to detect a format, or infer format from an unchanged semver family.
+
+**Rationale.** E18 preserves older saves even when opens remains compatible. The engine owns its state representation; exact input declarations make inspection small without hiding evidence of a partial state tree. Compatibility inspection does not replace full state validation.
+
+## 2026-10-16: Public decision classification preserves private questions
+
+**Decision.** AgentReply.decision optionally carries the actual card kind, build, change, layout, pause or other. Only explicit other distinguishes a private question. Older replies omit kind and retain the consumer's conservative change gate; unknown values fail runtime validation. The server independently classifies its durable active-chat card and rechecks authority.
+
+**Alternatives.** Infer authority from button text or proposal presence; treat every decision as a Reality change.
+
+**Rationale.** S12 server-terminal-decision-kind-20261016 permits private answers under read authority while retaining current policy for changes. Undo replies can omit proposal, so proposal presence cannot supply classification. The field is a projection and grants no server authority.
+
+## 2026-10-16: Await page application across the remote frame boundary
+
+**Decision.** Add optional asynchronous applyNotice to remotePort and await it before sequence advancement, acknowledgement or queued readiness. Abort on connection replacement, matching snapshot installation.
+
+**Alternatives.** Count a MessagePort enqueue as application; delay only replacement snapshots.
+
+**Rationale.** Replay can cross the iframe boundary after the socket has received ready. The canonical files clarification 991ff72fd6 requires actual application before release. Existing synchronous consumers remain compatible. The delayed-replay regression and all 113 host tests pass with typecheck and build.
+
+## 2026-10-16: One canonical installed build encoding for check and install
+
+**Decision.** Export strict build-list/envelope schemas and canonical helpers from the host root. The versioned bytes bind prefix and exact executable alongside immutable identity and complete sorted files. Share the native installer's exact vector and emit structural JSON schemas.
+
+**Alternatives.** Keep independent signing and installing encoders, or let the signing callback choose unsigned prefix/entry metadata.
+
+**Rationale.** The permanent files record already settles these exact bytes before implementation. A shared package prevents SDK check evidence and native installation from signing different executable authority. Runtime helpers enforce cross-field constraints that JSON Schema alone does not represent. Cryptographic verification remains native and uses the App-controlled key.
+
+## 2026-10-15: Carry explicit host refusal data without deriving policy
+
+**Decision.** Privileged reply envelopes accept optional code and JSON-object detail. Bridge and loader preserve these explicit fields and reconstruct HostRefusal, with HostRefusalError as an alias. Text-only errors keep their existing behavior. Invalid detail is omitted without inventing a replacement policy value.
+
+**Alternatives.** Infer model policy from prose, collapse every refusal to text, or default absent needed data to false.
+
+**Rationale.** E5 needs the consumer to distinguish explicitly optional work from needed or unknown work. The permanent files record gained the generic structure before code in `b3fd2ad46e`. The model-route host owns compute-out interpretation; the transport preserves it without making a model decision or granting guest access.
+
+## 2026-10-15: Preserve page requests through explicit remote synchronization
+
+**Decision.** remotePort returns the existing PortClient surface with snapshot installation, current readiness, input/agent/control access, and explicit reconnect. It retains pending opaque request identities across socket replacement, while separately correlating numeric port ids. It refreshes at 55 minutes and preserves one fixed five-minute disconnected window. The App chooses when to retry after connectivity returns; no immediate loop or unrecorded backoff is introduced.
+
+**Alternatives.** Reuse a join ticket on every reconnect, discard requests through the local port's timeout, or resume input before an exact synchronization acknowledgment and the latest ready sequence.
+
+**Rationale.** E8 and PV85 require authoritative page state before input and deduplicated retry. A stalled snapshot installer is raced against its attempt's abort signal; application code must honor that signal before committing its view. Server admission, method authorization, projection, account/payer identity and request outcomes remain server responsibilities.
+
+## 2026-10-15: Validate the remote player wire by direction
+
+**Decision.** Export distinct RemoteClientFrame and RemoteServerFrame schemas with fixed-error JSON codecs and emitted JSON Schemas. They carry E8's four player channels and synchronization controls, with safe integer sequences and port ids, a separate opaque request id, and no host/core vocabulary. Admitted resume credentials are opaque strings; trusted account identities remain server-side.
+
+**Alternatives.** Reuse the privileged host vocabulary, or let the server and App define separate wire shapes.
+
+**Rationale.** The permanent files record and the cycle's canonical E8 wire clarification define one direction-specific contract. Strict outer objects reject unknown authority fields. Server admission, sender stamping, method authorization, projection and request deduplication remain server obligations; a valid envelope grants no capability.
+
+## 2026-10-15: Preserve the authenticated sender across folder dispatch
+
+**Decision.** PortCall accepts optional from and servePort passes it separately from arguments. Remote adapters must overwrite this value from authenticated admission. Port closure rejects waiters and suppresses delayed replies.
+
+**Alternatives.** Trust a sender inside call arguments or lose sender identity before the pack handles the call.
+
+**Rationale.** E8 assigns sender stamping to the server and per-person behavior to pack handlers. The generic dispatch seam transports that identity without claiming to authenticate it.
+
+## 2026-10-15: Host-owned away recap metadata
+
+**Decision.** The optional grant away object carries pace and authoritative monthly compute percentage, with null for unavailable usage. The page may open the away App surface through its own connection.
+
+**Alternatives.** Derive billing share inside the pack or substitute zero when usage is unavailable.
+
+**Rationale.** NP8 reads simulation changes from the record, while pace and metered usage belong to the host. Canonical files amendment `8ed74c0ddd` defines this boundary.
+
+## 2026-10-15: Adapt the server worker through the existing transport contract
+
+**Decision.** `workerTransport(worker)` supports the Node worker_threads event emitter and Bun's Worker EventTarget without a runtime-specific import in shipped code. It forwards payloads, reports errors and termination through `onClose`, removes listeners on disposal, and requests termination once. Error text is a fixed transport description. An early startup buffer holds up to 1,000 messages until the bridge subscribes; this is an internal guard, not a limit on attached traffic. The loader and bridge retain schema, ask, and endpoint enforcement.
+
+**Alternatives.** Node-only imports in the shared package (unusable in browser consumers). A worker-specific protocol (duplicates the host contract). Treating a worker as a sandbox (the approved plan makes no such guarantee).
+
+**Rationale.** E11 requires the server's worker endpoint to carry the same vocabulary as the App. Local tests execute real Node 24.22.0 and Bun 1.4.3 workers, alongside deterministic message and lifecycle fixtures. The transport closes immediately when it observes failure or termination; graceful final save belongs to the correlated `quit` handler, and native exit observation belongs to the runner. Compiled executables and engine loading remain their own gates.
+
+## 2026-10-15: Separate the authoritative core and per-person page connections
+
+**Decision.** Add explicit core/page families to each bridge, enforce them before dispatch, stamp the grant's endpoint, and expose distinct loader APIs and a two-port parent handoff. Retain the deprecated combined connection only for existing local 0.3 consumers during migration.
+
+**Alternatives.** Forward page requests through the shared core (mixes account-specific dialogs and preferences between people); remove the existing API immediately (breaks unchanged Wave 2 consumers before their migration is verified).
+
+**Rationale.** Wave 3 E7 and the files record require per-person page operations to stay on that person's device while the authoritative core can run on a server. Each bridge owns its reply scope. New consumers explicitly choose a family and remote guests never receive combined. See split-endpoints.md for migration and acceptance boundaries.
+
+## 2026-10-15: Observe a save before sending its request
+
+**Decision.** Register the save waiter before sending save.request. If the send is refused or throws, remove and reject that waiter immediately.
+
+**Alternatives.** Require asynchronous transports everywhere (an undocumented condition on Transport); poll for an already completed save (adds state and races).
+
+**Rationale.** D8 promises the committed version in reply to requestSave. The previous ordering missed a synchronous transport's save because receive captured the waiter list before requestSave added it. The correction changes no message shape or policy value.
 
 ## 2026-10-15: startCore starts a classic worker that imports the core and holds the page's messages until it listens (0.3.3)
 
@@ -89,3 +387,8 @@ Without the step that stops a held message reaching other listeners, a core list
 **Alternatives.** A protocol per host.
 
 **Rationale.** The same engine and pack run in every place the record names. Recorded from the build V2 plan, approved by the operator on 2026-10-14.
+
+
+### 2026-10-20: Stable saved image intent namespace
+
+The native App supplies only a domain-separated SHA-256 namespace of the current account and Reality folder. It remains stable across session, device and relaunch. The module retains each journal under this namespace; a new copy or account uses a separate namespace without reading, resetting or releasing the old original. This namespace is not permission. The API still checks current original authority. A saved intent with a missing original in the same namespace remains unresolved and never automatically dispatches again. The current server Host grant does not advertise imageOriginals or this namespace, so this native recovery release does not implement server, Studio or away image recovery; previous exact component pins remain available.
