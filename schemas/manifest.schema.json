@@ -157,6 +157,26 @@
                   "server"
                 ]
               }
+            },
+            "playerProjection": {
+              "type": "string",
+              "const": "ew.remote-player.v1"
+            },
+            "executables": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "minLength": 1
+              },
+              "propertyNames": {
+                "enum": [
+                  "windows-x64",
+                  "macos-arm64",
+                  "macos-x64",
+                  "linux-x64",
+                  "server"
+                ]
+              }
             }
           },
           "additionalProperties": false

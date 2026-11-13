@@ -1,6 +1,6 @@
 {
   "name": "@emergent-worlds/host",
-  "version": "0.3.3",
+  "version": "0.3.15",
   "description": "The host contract of Emergent Worlds: the manifest, interface, and contract schemas, the message vocabulary between a folder and its host, the resolver of uses, and the compatibility marks.",
   "license": "Apache-2.0",
   "type": "module",
@@ -37,6 +37,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check:worker": "pnpm build && node scripts/worker-check.mjs",
+    "check:runtime-workers": "node scripts/check-runtime-worker.mjs && bun scripts/check-runtime-worker.mjs",
     "prepare": "tsc -p tsconfig.build.json"
   },
   "dependencies": {

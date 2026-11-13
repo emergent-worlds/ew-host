@@ -4,6 +4,126 @@
     "contract": {
       "type": "object",
       "properties": {
+        "studioValidation": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "reads": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            }
+          },
+          "required": [
+            "module",
+            "reads"
+          ],
+          "additionalProperties": false
+        },
+        "studioRender": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "reads": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            }
+          },
+          "required": [
+            "module",
+            "reads"
+          ],
+          "additionalProperties": false
+        },
+        "studioScenario": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "reads": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            },
+            "actions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "advance",
+                  "set_variable"
+                ]
+              },
+              "minItems": 1
+            },
+            "expectations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "tick_equals",
+                  "variable_equals"
+                ]
+              }
+            }
+          },
+          "required": [
+            "module",
+            "reads",
+            "actions"
+          ],
+          "additionalProperties": false
+        },
+        "studioSampling": {
+          "type": "object",
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            },
+            "reads": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            },
+            "corpus": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
+          },
+          "required": [
+            "module",
+            "reads",
+            "corpus"
+          ],
+          "additionalProperties": false
+        },
         "needs": {
           "type": "object",
           "properties": {

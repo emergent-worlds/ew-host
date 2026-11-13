@@ -8,3 +8,33 @@ export type { FrameSelector, FrameMethod } from './journeys.js';
 export type { Transport, HostHandlers } from './bridge.js';
 export { callPort, servePort, PORT_VERSION, PortCall, PortNotice, PortReply } from './port.js';
 export type { PortClient, PortServer } from './port.js';
+
+export { endpointReceives, endpointSends } from './endpoints.js';
+export type { EndpointFamily } from './endpoints.js';
+export { loopbackTransport, SOCKET_FRAME_BYTES } from './loopback.js';
+export { splitInstalledPlayerTransport } from './installed-player-transport.js';
+export type { LoopbackOptions, SocketLike } from './loopback.js';
+export { workerTransport, WORKER_STARTUP_MESSAGES } from './worker.js';
+export type { NodeWorkerEndpoint, WebWorkerEndpoint } from './worker.js';
+export * from './remote-schema.js';
+export * from './remote-player-projection.js';
+export { remotePort } from './remote.js';
+export type { RemotePort, RemotePortOptions, RemoteState, RemoteControl, RemoteRequestOptions, RemoteAgentResult } from './remote.js';
+export { HostRefusal, HostRefusalError, RefusalDetail } from './refusal.js';
+
+export { BuildFile, BuildList, SignedBuild, canonicalBuildList, parseBuildList, portablePath } from './builds.js';
+export { serverAddress } from './address.js';
+
+export * from './studio-validation.js';
+export * from './mechanic-source.js';
+export * from './studio-render.js';
+export * from './studio-scenario.js';
+
+export * from './studio-sampling.js';
+
+export * from './engine-selection.js';
+
+export * from './component-selection.js';
+
+export * from './scoped-transactions.js';
+export type {StudioAuthoringSession, StudioAuthoringPorts} from './studio-authoring.js';

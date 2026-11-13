@@ -1,0 +1,55 @@
+{
+  "$ref": "#/definitions/save-inspection",
+  "definitions": {
+    "save-inspection": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "empty",
+            "ready",
+            "update",
+            "refused"
+          ]
+        },
+        "savedFormat": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "currentFormat": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "savedWith": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "required": [
+        "status",
+        "savedFormat",
+        "currentFormat"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

@@ -33,6 +33,8 @@ export function coreBootstrap(absoluteUrl: string): string {
     '  },',
     '  (error) => {',
     '    self.removeEventListener("message", hold);',
+    '    const exception = error instanceof Error && ["Error","SyntaxError","ReferenceError","RangeError","EvalError","URIError"].includes(error.name);',
+    `    self.postMessage({ ewCoreImportFailure: 1, url: ${url}, kind: exception ? "exception" : "unavailable" });`,
     '    setTimeout(() => { throw error; });',
     '  },',
     ');',
@@ -47,8 +49,19 @@ export function coreBootstrap(absoluteUrl: string): string {
  * (the frame's policy allows `blob:` workers). Pass the core's URL, absolute or
  * relative to the page. The core is an ES module and runs as one.
  */
-export function startCore(url: string): Worker {
+export type CoreImportFailure = {kind:'exception'|'unavailable'};
+export function startCore(url: string, options?:{onImportFailure?(failure:CoreImportFailure):void}): Worker {
   const absolute = new URL(url, location.href).href;
   const bootstrap = URL.createObjectURL(new Blob([coreBootstrap(absolute)], { type: 'text/javascript' }));
-  return new Worker(bootstrap);
+  const worker = new Worker(bootstrap);
+  if(options?.onImportFailure){
+    const failed=(event:MessageEvent)=>{
+      const value=event.data as {ewCoreImportFailure?:unknown;url?:unknown;kind?:unknown}|null;
+      if(value?.ewCoreImportFailure!==1||value.url!==absolute||(value.kind!=='exception'&&value.kind!=='unavailable'))return;
+      worker.removeEventListener('message',failed);
+      options.onImportFailure!({kind:value.kind});
+    };
+    worker.addEventListener('message',failed);
+  }
+  return worker;
 }
