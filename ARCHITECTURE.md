@@ -10,7 +10,7 @@ The host contract's message vocabulary (the asks of the files page Section 5) an
 
 ## The record it answers to
 
-The files page Sections 3 to 6; the engines matrix Sections 2 and 4; MR2.1, MR3.1, MR5.1, MR5.3. The authoritative repository record is indexed in the [product coverage index](../command-center/docs/product/coverage.md). Since the operator's decision of 2026-10-15, the published pages are its view, and since 2026-11-15 (command-center #511) every screen is drawn as frames in the Figma design record (https://www.figma.com/design/oOA6g5ly1Twzx18Mz9YSym); the GitHub canvases are retired. Changes are made in those permanent product files first, on review branches; where this repository and the record differ, the record holds.
+The files page Sections 3 to 6; the files page Sections 13.1 and 13.3 (formerly the engines matrix Sections 2 and 4, archived 2026-11-15); MR2.1, MR3.1, MR5.1, MR5.3. The authoritative repository record is indexed in the [product coverage index](../command-center/docs/product/coverage.md). Since the operator's decision of 2026-10-15, the published pages are its view, and since 2026-11-15 (command-center #511) every screen is drawn as frames in the Figma design record (https://www.figma.com/design/oOA6g5ly1Twzx18Mz9YSym); the GitHub canvases are retired. Changes are made in those permanent product files first, on review branches; where this repository and the record differ, the record holds.
 
 ## What it depends on
 
